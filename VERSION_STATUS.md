@@ -17,3 +17,5 @@ main 指向 v0.2.8-build10-startup-recovery，这是独立已测候选，不是�
 0.2.1、0.2.3、0.2.4未发现对应完整源码快照，只有部分应用包；不编造源码标签，也不上传二进制。shortcut-focus工作目录在本次冻结时仍开发中，未收入任何稳定/整合标签。各完整版本的app静态资源与源码已核对，0.2.7/0.2.8的二进制哈希也与既有打包记录一致，但这些应用包和原始报告不上传。
 
 本次只读复验：八个Mac快照的JS/MJS、shell、Python及JSON语法检查通过；0.2.7八组、0.2.8十组纯Node测试通过。原始原型JS/MJS、Python、shell语法通过。原生UI/实时模型/权限/输入法/多屏及实际文件选择器等不属于源码归档验证。后续在发布clone的构建结果另行记录。
+
+发布clone最终复验：0.2.8 startup-recovery全部画布JavaScript语法、10组纯Node测试与swift build -c release -j 2通过。编译仅在独立源码clone进行，未启动AppDelegate、读取钥匙串、操作运行应用或用户项目；.build与日志不上传。
