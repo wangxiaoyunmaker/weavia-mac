@@ -1,0 +1,226 @@
+/* Shared presentation layer. Preserve teammate canvas geometry, semantic card colors,
+   pointer handling, storage and project routes. Native counterpart: VisualTheme.ets. */
+:root {
+  --ui-ink:#27303f; --ui-muted:#657184; --ui-primary:#2563eb;
+  --ui-primary-hover:#1d4ed8; --ui-line:#dfe4eb; --ui-soft:#f1f4f8;
+  --ui-surface:#fafbfd; --ui-glass:rgba(255,255,255,.9);
+  --ui-shadow:0 4px 18px #1d30400a,0 1px 3px #1d304006;
+  --ui-overlay-shadow:0 16px 52px #1d304018,0 2px 8px #1d304008;
+  --blue:var(--ui-primary); --line:#e8ecf1;
+  font-family:"HarmonyOS Sans","HarmonyOS Sans SC",system-ui,"PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--ui-ink);
+}
+body {background:var(--ui-surface)}
+#workspace {background-color:#f6f8fa;background-image:radial-gradient(circle,#e1e6ed 1px,transparent 1.3px)}
+/* Fixed tools carry material depth. Moving cards never acquire backdrop blur. */
+.floating,#sidebar,#collapsed-project,#canvas-toolbar,#tag-quick-tools,#tag-popover,#companion-hint {
+  background:var(--ui-glass);border:1px solid var(--ui-line);box-shadow:var(--ui-shadow);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+}
+#sidebar,#collapsed-project {border-radius:18px}
+#sidebar {background:rgba(255,255,255,.94)}
+#search-shell {border-radius:18px}
+#search-shell:focus-within,#search-shell.open:focus-within {
+  border-color:#89a8ec;box-shadow:0 0 0 3px #2563eb14,var(--ui-shadow);
+}
+#search-shell.agent-mode,#search-shell.agent-mode:focus-within,#search-shell.agent-mode.open:focus-within {
+  border-color:#8fa9dc;box-shadow:0 0 0 1px #2563eb17,var(--ui-shadow);
+}
+#query::placeholder,#canvas-search-input::placeholder {color:var(--ui-muted)}
+.mode-switch {background:var(--ui-soft)}
+.source-row.chosen {background:#edf3ff;color:#1d4ed8}
+.source-row .hint,#scope-footer,#agent-scope,.zoom {color:var(--ui-muted)}
+.source-row {min-height:36px}
+#submit,.toolbar .active,.primary,#memory-dialog .primary,.relations-dialog button.primary,.idea-decision-actions button.primary {
+  background:var(--ui-primary);border-color:var(--ui-primary);color:#fff;
+}
+.primary:hover,#memory-dialog .primary:hover,.relations-dialog button.primary:hover,.idea-decision-actions button.primary:hover {background:var(--ui-primary-hover)}
+button:disabled {cursor:default}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,
+#memory-dialog :is(input,textarea,select):focus-visible,.relations-dialog :is(button,input,textarea,select):focus-visible {
+  outline:2px solid var(--ui-primary);outline-offset:3px;
+}
+#query:focus-visible {outline:none}
+#sidebar .tabs button {color:var(--ui-muted)}
+#sidebar .tabs button.active {color:var(--ui-primary)}
+.tabs button.active:before {background:var(--ui-primary)}
+.project-memory-launch {background:var(--ui-soft);color:var(--ui-ink);border:1px solid transparent}
+.project-memory-launch:hover {background:#e9eef6;border-color:var(--ui-line)}
+.project-memory-launch small,.overview-title,.overview-card span,.time {color:var(--ui-muted)}
+.overview-card {color:var(--ui-ink)}
+.event {background:#edf2fa}
+.event-title {color:#315faa;font-size:10px}
+.event p {color:var(--ui-muted);font-size:10px;line-height:1.5}
+.time {font-size:9px}
+/* Elevation, not decoration: one border/shadow family for every transient surface. */
+.menu,#result-panel,dialog,#dialog.relations-dialog,#memory-dialog,#project-create-dialog {
+  color:var(--ui-ink);background:#fff;border:1px solid var(--ui-line);box-shadow:var(--ui-overlay-shadow);border-radius:18px;
+}
+.menu {border-radius:12px}
+.menu button {min-height:36px}
+.menu small,#result-panel p,.result-item small,#dialog-body {color:var(--ui-muted)}
+dialog::backdrop,#canvas-search-dialog::backdrop {background:#1e2c3b2b;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#dialog-body input:not([type=checkbox]),#dialog-body textarea,#memory-kind,#memory-text,#relation-form input:not([type=checkbox]),#relation-form select,#relation-form textarea {
+  color:var(--ui-ink);background:var(--ui-surface);border:1px solid var(--ui-line);border-radius:10px;
+}
+#dialog-body input::placeholder,#dialog-body textarea::placeholder,#tag-form input::placeholder,#tag-form textarea::placeholder {color:var(--ui-muted)}
+.memory-caption,.memory-hint,.memory-empty,.memory-item small,.memory-counter,
+.relation-intro,.relation-footnote,.relation-evidence-preview,.relation-empty,.relation-review-heading,.relation-history,.relation-history time,
+.idea-review-note,.idea-origin-details dt,.idea-review-panel time,#relation-form label small,.relation-remove-row span {color:var(--ui-muted)}
+.memory-item p,.relation-list-heading strong,.relation-endpoints,.idea-review-heading,.idea-review-panel pre {color:var(--ui-ink)}
+#memory-summary,.relation-pair,.idea-origin-details,.relations-dialog .relation-list-item {background:var(--ui-soft);color:var(--ui-ink)}
+.memory-item,.idea-revision,.relations-dialog .relation-list-item {border-color:var(--ui-line)}
+#memory-status {color:var(--ui-muted)}
+#memory-status[data-error=true],.relation-warning,#relation-error,#relation-list-error,#idea-review-error {color:#a42e42}
+#memory-confirm,#relation-form input[type=checkbox],#dialog .idea-confirm-check input {accent-color:var(--ui-primary)}
+/* Canvas search is the same temporary layer as other inspectors, not a second dark theme. */
+#canvas-search-dialog {color:var(--ui-ink);background:rgba(250,251,253,.98);border-color:var(--ui-line);border-radius:22px;box-shadow:var(--ui-overlay-shadow)}
+#canvas-search-modal-form {background:#fff;border-color:var(--ui-line);border-radius:14px}
+#canvas-search-query {color:var(--ui-ink);caret-color:var(--ui-primary)}
+#canvas-search-query::placeholder,#canvas-search-count,#close-canvas-search,.search-item-tags {color:var(--ui-muted)}
+#canvas-search-type {background:var(--ui-soft);color:var(--ui-ink);border-radius:9px}
+#close-canvas-search {width:32px;height:32px;border-radius:9px}
+#close-canvas-search:hover {background:var(--ui-soft)}
+.canvas-search-item {color:var(--ui-ink);display:flex;flex-direction:column;align-self:start;align-items:stretch}
+.canvas-search-thumb {border:1px solid var(--ui-line);border-radius:14px;box-shadow:0 2px 6px #1d304006}
+.canvas-search-item:hover .canvas-search-thumb {box-shadow:0 0 0 2px #91ace2;transform:translateY(-1px)}
+.canvas-search-empty,.canvas-search-empty span {color:var(--ui-muted)}
+.search-text-preview {color:var(--ui-muted);overflow-wrap:anywhere}
+/* Content surfaces stay opaque. Existing tag and confirmation state colors are semantic. */
+.card {border-color:var(--ui-line);box-shadow:0 3px 12px #1d30400a}
+.card header,.card .body,.local-label,.drag-meta-hint {color:var(--ui-muted)}
+.card.selected {outline-color:#769ce8}
+.resource-footer {background:#eff2f6;border-top-color:var(--ui-line)}
+.resource-footer>span:first-child {color:var(--ui-ink)}
+.resource-link {background:#fff;color:var(--ui-muted)}
+#tag-quick-tools button,#tag-form label,#tag-saved-list {color:var(--ui-muted)}
+#tag-save {background:var(--ui-primary)}
+#tag-save:hover {background:var(--ui-primary-hover)}
+/* Companion identity uses a quiet lilac cue, actions still share the product blue. */
+#companion-hint {color:var(--ui-ink);border-color:#dedfeb;box-shadow:var(--ui-overlay-shadow);font-size:12px}
+#companion-hint header,#companion-hint .hint-basis,#companion-hint .hint-less {color:var(--ui-muted)}
+#companion-hint header {font-size:11px}
+#companion-hint header button {width:28px;height:28px;border-radius:8px;color:var(--ui-muted)}
+#companion-hint .hint-basis {font-size:11px}
+#companion-hint footer button {background:var(--ui-soft);color:var(--ui-ink);min-height:32px;padding:7px 10px;border-radius:8px}
+#companion-hint footer button:first-child {background:var(--ui-primary);color:#fff}
+#companion-hint .hint-less {background:none}
+.companion-target-ring {border-color:#9d8fbb;box-shadow:0 0 0 3px #a89bc516}
+/* Preserve the existing project entrance composition and supplied artwork. */
+.project-new,.desktop-exit {background:#e9eff62e;border:1px solid #ffffff4d;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.project-new:hover,.desktop-exit:hover {background:#e9eff64d}
+.project-new span {background:#ffffff24}
+.desktop-clock time {font-weight:600}
+.orbit-project :is(img,svg) {animation:none}
+#project-create-dialog .project-create-list button {min-height:36px;color:var(--ui-ink)}
+#toast {background:#27303ff2;border:1px solid #ffffff1a}
+/* Avoid blur compositing every frame while the canvas content moves beneath fixed tools. */
+body:has(.card-dragging) :is(.floating,#sidebar,#tag-quick-tools,#tag-popover),
+body.dragging :is(.floating,#sidebar,#tag-quick-tools,#tag-popover) {background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) {
+  .floating,#sidebar,#collapsed-project,#canvas-toolbar,#tag-quick-tools,#tag-popover,#companion-hint {background:#fff}
+  .project-new,.desktop-exit {background:#566277}
+}
+@media (prefers-reduced-transparency:reduce) {
+  .floating,#sidebar,#collapsed-project,#canvas-toolbar,#tag-quick-tools,#tag-popover,#companion-hint,#canvas-search-dialog {background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none}
+  dialog::backdrop {backdrop-filter:none;-webkit-backdrop-filter:none}
+  .project-new,.desktop-exit {background:#566277;-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after {animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+
+/* Search icon and focus must remain visible after moving the inspector to light surfaces. */
+#canvas-search-modal-form img.search-magnifier {filter:none;opacity:.65}
+#canvas-search-modal-form:focus-within {border-color:#89a8ec;box-shadow:0 0 0 3px #2563eb14}
+#canvas-search-query:focus-visible {outline:none}
+
+/* One icon-only work-mode capsule, outside the search surface. */
+.top-controls {width:min(566px,calc(100% - var(--canvas-search-inset) - 20px));display:grid;grid-template-columns:minmax(0,1fr) 100px;gap:10px;align-items:start}
+#search-shell {min-width:0}
+#work-mode-switch {position:relative;min-width:0;border-radius:16px}
+#work-mode-switch .work-mode-options {display:flex;gap:2px;padding:2px 4px;height:48px;background:transparent;border-radius:16px}
+#work-mode-switch .work-mode-options button {flex:0 0 44px;min-width:44px;width:44px;min-height:44px;height:44px;aspect-ratio:1;border-radius:11px;padding:0}
+.work-mode-options button:hover:not(:disabled) {background:var(--ui-soft)}
+#work-mode-switch .work-mode-options button[aria-pressed=true] {background:#e8efff;box-shadow:inset 0 0 0 1px #b7caf4,0 1px 3px #1d30400a}
+#work-mode-switch .work-mode-options button[aria-pressed=true]:hover:not(:disabled) {background:#dfe9ff}
+.work-mode-options button:disabled {cursor:default;opacity:.55}
+#work-mode-switch[aria-busy=true] .work-mode-options {cursor:progress}
+#work-mode-status {position:absolute;right:0;top:calc(100% + 8px);width:220px;max-width:calc(100vw - 32px);margin:0;padding:10px 12px;border:1px solid var(--ui-line);border-radius:10px;background:#fff;box-shadow:var(--ui-shadow);font-size:12px;line-height:1.5;color:var(--ui-muted)}
+#work-mode-status[data-error=true] {color:var(--ui-danger,#a42e42)}
+@media(max-width:800px) {.top-controls {gap:8px}}
+@media(max-width:560px) {
+ #workspace {--canvas-search-inset:0px}
+ .top-controls {width:calc(100% - 24px);top:74px;gap:8px;grid-template-columns:minmax(0,1fr) 100px}
+ #search-form {padding-left:6px;padding-right:6px;gap:3px}
+ #sidebar {top:132px}
+ #result-panel {top:132px}
+ #canvas-toolbar {top:calc(50% + 50px)}
+ #collapsed-project {top:16px}
+}
+
+/* Apple-design guidance adapted to a HarmonyOS desktop: platform type,
+   immediate press feedback, stable content, and user-selected higher contrast. */
+#work-mode-status {font-size:12px;line-height:1.5}
+#canvas-context-panel.floating header small,#canvas-context-panel.floating #canvas-context-status {font-size:11px}
+#canvas-context-panel.floating p,#canvas-context-panel.floating #canvas-context-details,
+#canvas-context-panel.floating #canvas-context-text,#canvas-context-panel.floating footer button {font-size:12px}
+.work-mode-options button:active:not(:disabled),.toolbar .icon:active:not(:disabled),
+#close-canvas-search:active,#canvas-context-close:active {box-shadow:inset 0 0 0 1px #27303f24}
+.work-mode-options button[aria-pressed=true]:active:not(:disabled),
+#submit:active:not(:disabled),.primary:active:not(:disabled) {background:var(--ui-primary-hover)}
+@media (prefers-contrast:more) {
+  :root {--ui-muted:#445064;--ui-line:#788597;--line:#788597;--ui-glass:#fff}
+  .floating,#sidebar,#collapsed-project,#canvas-toolbar,#tag-quick-tools,#tag-popover,#companion-hint,#canvas-search-dialog {background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none;border-color:var(--ui-line)}
+  #canvas-context-panel.floating {border-color:var(--ui-line)}
+  #workspace {background-image:none}
+  button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible {outline-width:3px}
+}
+
+/* Small navigational copy gets a readable floor without resizing canvas cards. */
+#canvas-search-input {font-size:12px;line-height:1.4}
+.event p {font-size:11px;line-height:1.5}
+.event-title,.overview-title {font-weight:500}
+.overview-title {font-size:11px}
+.overview-card {font-size:12px}
+.overview-card > span:not(.overview-card-heading):not(.side-resource-tags) {font-size:11px}
+.source-row .hint,#scope-footer,#agent-scope,#agent-scope button,.memory-item small {font-size:11px}
+.memory-item small,#companion-hint .hint-basis {line-height:1.5}
+@media(max-width:700px) {#canvas-search-input {font-size:11px}}
+
+/* A discoverable route to existing native settings in both sidebar states. */
+.project > [data-project-name] {flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.project #collapse {margin-left:0}
+.settings-entry {color:var(--ui-muted);flex-shrink:0}
+.settings-entry svg {width:17px;height:17px}
+.settings-entry:disabled {opacity:.45}
+.settings-entry:active:not(:disabled) {background:var(--ui-soft);box-shadow:inset 0 0 0 1px #27303f24}
+#collapsed-project .settings-entry {width:28px;height:32px}
+
+/* Project identity gets its own flexible row; native actions never squeeze its text. */
+#workspace {--sidebar-edge:274px;--canvas-search-inset:286px}
+#sidebar,#collapsed-project {width:260px}
+#sidebar .project,#collapsed-project {
+ display:grid;grid-template-columns:32px minmax(0,1fr) 32px 32px;
+ align-items:center;gap:4px;height:auto;min-height:80px;padding:8px 10px;
+}
+#sidebar .project > [data-project-name],#collapsed-project > [data-project-name] {
+ grid-column:2 / -1;grid-row:1;min-width:0;white-space:normal;
+ overflow-wrap:anywhere;overflow:visible;text-overflow:clip;
+ font-size:14px;line-height:20px;padding:0;color:var(--ui-ink);
+}
+#projects,#projects-collapsed {grid-column:1;grid-row:1;align-self:start}
+#sidebar .project .settings-entry,#collapsed-project .settings-entry {grid-column:2;grid-row:2;justify-self:end}
+#sidebar .project .history-entry,#collapsed-project .history-entry {grid-column:3;grid-row:2}
+#collapse,#collapsed-project #expand {grid-column:4;grid-row:2}
+#sidebar .project .icon,#collapsed-project .icon {
+ width:32px;height:32px;min-width:32px;min-height:32px;margin:0;
+ color:var(--ui-ink);border-radius:8px;
+}
+#sidebar .project .icon svg,#collapsed-project .icon svg {width:18px;height:18px;stroke-width:1.2}
+#sidebar .project .pdf-panel,#collapsed-project .pdf-panel {width:20px;height:20px}
+#sidebar .project .pdf-back,#collapsed-project .pdf-back {width:14px;height:18px}
+@media(max-width:700px) {
+ #workspace {--sidebar-edge:250px;--canvas-search-inset:262px}
+ #sidebar,#collapsed-project {width:240px;left:10px}
+}

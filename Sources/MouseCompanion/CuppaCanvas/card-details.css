@@ -1,0 +1,8 @@
+.card .card-detail-open{flex:none;margin-left:auto;border:0;border-radius:6px;padding:4px 7px;background:#f1eee8;color:#53504b;font:inherit;font-size:11px;white-space:nowrap;cursor:pointer}
+.card .card-detail-open:hover,.card .card-detail-open:focus-visible{background:#e4ddcf;outline:2px solid #a9a08e;outline-offset:2px}
+#card-detail-dialog{width:min(760px,calc(100vw - 48px));max-height:calc(100vh - 48px);padding:0;border:1px solid #ded9ce;border-radius:16px;background:#fffcf6;color:#35332e;box-shadow:0 24px 80px #0003;overflow:auto}
+#card-detail-dialog::backdrop{background:#2225}
+#card-detail-dialog>header,#card-detail-dialog>footer{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#fffcf6;position:sticky;z-index:1}
+#card-detail-dialog>header{top:0;border-bottom:1px solid #e7e2d9}#card-detail-dialog>footer{bottom:0;border-top:1px solid #e7e2d9}
+#card-detail-dialog button{border:1px solid #ded9ce;border-radius:8px;background:#f2eee5;padding:7px 12px;color:inherit;cursor:pointer}
+.card-detail-body{padding:8px 24px 24px;user-select:text;overflow-wrap:anywhere}.card-detail-body h2{font-size:22px}.card-detail-body h3{font-size:12px;color:#777165;margin:20px 0 8px}.card-detail-text{white-space:pre-wrap;line-height:1.7;font-size:14px}.card-detail-image{display:block;max-width:100%;height:auto;margin:auto}.card-detail-body svg{display:block;width:min(100%,432px);border:1px solid #ded9ce}.card-detail-table{overflow:auto;margin:12px 0}.card-detail-table table{border-collapse:collapse}.card-detail-table td{white-space:pre-wrap;border:1px solid #ded9ce;padding:8px 12px}.card-detail-body a{color:#4e6654}
