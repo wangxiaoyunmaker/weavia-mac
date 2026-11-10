@@ -1,0 +1,237 @@
+.project-desktop,
+.traditional-desktop {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+.project-desktop {
+  --desktop-center: 52.4%;
+  --featured-width: min(45vw, 67.5dvh);
+  --tile-size: min(10.4vw, 15.6dvh);
+  color: #f7f8fc;
+  background: #111e37 url("assets/project-desktop/wallpaper.jpg") center / cover no-repeat;
+}
+.desktop-clock {
+  position: absolute;
+  z-index: 2;
+  top: 14.8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  text-align: center;
+  text-shadow: 0 3px 24px #0003;
+}
+.desktop-clock time {
+  display: block;
+  font-size: clamp(44px, min(8vw, 12dvh), 150px);
+  line-height: 1;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.045em;
+}
+.desktop-clock p {
+  margin: 1.6dvh 0 0;
+  font-size: clamp(12px, min(1.23vw, 1.85dvh), 24px);
+  font-weight: 600;
+}
+.project-grid {
+  position: absolute;
+  inset: 0;
+  --tile-step: calc(var(--tile-size) * 1.035);
+  --featured-left: calc(50% - var(--featured-width) / 2);
+  --featured-right: calc(50% + var(--featured-width) / 2);
+  --upper-row: calc(var(--desktop-center) - var(--tile-size) - 1px);
+  --lower-row: calc(var(--desktop-center) + 4px);
+}
+.orbit-project,
+.project-new {
+  position: absolute;
+  top: var(--upper-row);
+  width: var(--tile-size);
+  aspect-ratio: 1;
+  margin: 0;
+  overflow: hidden;
+  border-radius: clamp(10px, 1.55vw, 26px);
+  background: #e1e7f149;
+}
+.orbit-project {pointer-events:none}
+.orbit-harmony {left:calc(var(--featured-left) - var(--tile-step) * 3)}
+.orbit-dan,.orbit-visual {left:calc(var(--featured-left) - var(--tile-step))}
+.orbit-guide {left:calc(var(--featured-left) - var(--tile-step) * 2)}
+.orbit-guide,.orbit-visual,.orbit-product,.project-new {top:var(--lower-row)}
+.orbit-research {left:calc(var(--featured-right) + 5px)}
+.orbit-spatial,.orbit-product {left:calc(var(--featured-right) + var(--tile-step) * 2 + 5px)}
+.project-new {
+  left: calc(var(--featured-right) + var(--tile-step) + 5px);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  cursor: pointer;
+}
+.project-new span {
+  display: grid;
+  place-items: center;
+  width: 29%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #ffffff55;
+  font-size: clamp(12px, 1.05vw, 18px);
+}
+.project-new:hover {background:#e1e7f163}
+.project-new:focus-visible {outline:2px solid white;outline-offset:3px}
+.orbit-project :is(img,svg) {
+  opacity: .32;
+  animation: project-cover-drift 28s ease-in-out infinite alternate;
+}
+.orbit-dan img {opacity:.96}
+.orbit-project:nth-child(even) :is(img,svg) {animation-delay:-14s}
+@keyframes project-cover-drift {
+  from {transform:translateX(-2px) scale(1.045)}
+  to {transform:translateX(2px) scale(1.045)}
+}
+.orbit-project img,
+.orbit-project svg {display:block;width:100%;height:100%;object-fit:cover}
+.orbit-project h2 {
+  position: absolute;
+  inset: auto 0 0;
+  margin: 0;
+  padding: 16% 9% 9%;
+  background: linear-gradient(transparent,#10172954);
+  color: #fff;
+  font-size: clamp(9px, min(1.16vw, 1.7dvh), 20px);
+  line-height: 1.2;
+}
+.featured-project {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: var(--desktop-center);
+  transform: translate(-50%,-50%);
+  width: var(--featured-width);
+  aspect-ratio: 1.82;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: clamp(14px, 1.55vw, 26px);
+  background: #34302a;
+  box-shadow: none;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+.featured-project img {display:block;width:100%;height:100%;object-fit:cover;transition:transform .35s ease}
+
+.featured-project-caption {
+  position: absolute;
+  inset: auto 0 0;
+  display: grid;
+  gap: .35em;
+  padding: 10% 3.7% 2.6%;
+  background: linear-gradient(transparent,#100d0ac4 75%,#100d0adb);
+  font-size: clamp(10px, min(.86vw, 1.29dvh), 16px);
+}
+.featured-project-caption strong {font-size:1.8em;line-height:1.12}
+.featured-project-caption small {font-size:1em;color:#f8f3e8b8}
+.desktop-profile {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 9.7%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: .7dvh;
+  font-size: clamp(12px,1.2vw,20px);
+}
+.desktop-profile svg {
+  width: clamp(34px,min(3.85vw,5.8dvh),67px);
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(#b6bac2,#515565);
+  fill: #f5f6fa;
+  stroke: none;
+}
+.desktop-exit {
+  position: absolute;
+  z-index: 4;
+  right: 3.9%;
+  bottom: 9.3%;
+  display: grid;
+  place-items: center;
+  width: clamp(36px,min(3.55vw,5.35dvh),62px);
+  aspect-ratio: 1;
+  padding: 0;
+  border-radius: 39%;
+  background: #dce1ee8c;
+  color: #fff;
+  cursor: pointer;
+}
+.desktop-exit:hover {background:#dce1eeb8}
+.desktop-exit svg {width:57%;height:57%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.featured-project:focus-visible,
+.desktop-exit:focus-visible {outline:3px solid #dceaff;outline-offset:5px}
+.traditional-desktop {background:#0b101c;outline:none}
+.traditional-desktop img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+@media (max-width:640px) {
+  .project-desktop {--featured-width:min(64vw,108dvh);--tile-size:16vw}
+  .desktop-clock {top:20%}
+  .project-new {left:calc(var(--featured-right) + 2px)}
+  .desktop-clock time {font-size:clamp(44px,12vw,75px)}
+  .desktop-profile {bottom:10%}
+}
+@media (prefers-reduced-motion:reduce) {
+  .orbit-project :is(img,svg) {animation:none}
+  .featured-project img {transition:none}
+}
+
+.project-create-form {display:grid;gap:12px}
+.project-create-form input {width:100%;margin-top:6px}
+.project-create-form .primary {justify-self:start}
+.project-create-list {display:grid;gap:6px;margin-top:16px}
+.project-create-list button {text-align:left;padding:7px 9px;border-radius:6px}
+#project-create-dialog {max-width:min(360px,90vw)}
+#project-create-dialog header {display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+#project-create-title {margin:0;font-size:16px}
+#close-project-create {border-radius:6px;font-size:20px}
+.project-create-error:empty,.project-create-list:empty {display:none}
+
+/* Quiet depth cues: the project is an invitation, not a bouncing control. */
+.featured-project {
+  transition: box-shadow 220ms cubic-bezier(.22,1,.36,1), filter 220ms ease;
+}
+.featured-project:hover {
+  box-shadow: 0 14px 42px #030b2524;
+  filter: brightness(1.035);
+}
+.featured-project:hover img {transform:scale(1.025)}
+.featured-project:active img {transform:scale(1.008)}
+.project-new,.desktop-exit,.project-create-list button {
+  transition: background-color 160ms ease, box-shadow 180ms ease;
+}
+#project-create-dialog[open] {animation:project-dialog-arrive 220ms cubic-bezier(.22,1,.36,1)}
+#project-create-dialog::backdrop {animation:project-backdrop-arrive 180ms ease}
+@keyframes project-dialog-arrive {
+  from {opacity:0;transform:translateY(8px) scale(.98)}
+  to {opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes project-backdrop-arrive {from {opacity:0} to {opacity:1}}
+@media (prefers-reduced-motion:reduce) {
+  .featured-project,.project-new,.desktop-exit,.project-create-list button {transition:none}
+  .featured-project:hover img,.featured-project:active img {transform:none}
+  #project-create-dialog[open],#project-create-dialog::backdrop {animation:none}
+}
+
+/* Native project tiles reuse the teammate layout, with real click/keyboard behavior. */
+button.orbit-project { border: 0; text-align: left; color: inherit; font: inherit; }
+button.orbit-project:focus-visible { outline: 3px solid #a9c9ff; outline-offset: 4px; }
+.orbit-project[hidden] { display: none !important; }
