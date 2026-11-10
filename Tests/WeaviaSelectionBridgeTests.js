@@ -69,3 +69,27 @@ buttons['selection-analyze'].onclick();assert.equal(messages.at(-1).action,'open
 env.marqueeIds.clear();env.selected='a';buttons['selection-details'].onclick();assert.equal(detailOpened,'a','menu opens selected card detail');buttons['selection-similar'].onclick();assert.equal(messages.at(-1).cards.length,1,'single-card actions use selected card');
 down();up();env.location.hash='#projects';flush();assert.equal(completed().length,before+1,'navigation rejects delayed selection');
 console.log('PASS: completed selection only, drag/cancel/edit/Focus/navigation guards, custom native input, single/multiple actions, zoom/clipped union, anchored options, stale IDs, geometry without reopen');
+// Real toolbar modes use the same completion contract, not the click listener.
+env.location.hash='#cuppa';bridge.receiveSnapshot({version:1,projectId:'Project A',materials:[],mode:'cocreate'});
+env.marqueeIds=new Set(['a','b']);env.selected=null;
+for(const kind of ['rectangle','lasso']){
+ env.tool=kind;const start=completed().length;
+ bridge.beginSelectionGesture();down(blank);up(700,700);flush();assert.equal(completed().length,start,'tool gestures must not use deferred single-click completion');
+ assert.equal(bridge.completeSelectionGesture(kind),true);assert.equal(completed().length,start+1);assert.deepEqual([...completed().at(-1).cards.map(c=>c.id)],['a','b']);
+ const session=completed().at(-1).selectionSession;bridge.alignSelection({projectId:'Project A',selectionSession:session,visible:true,x:440,y:400});poll();assert.equal(menu.hidden,false,'tool selection retains anchored actions after polling');
+ env.tool=kind==='rectangle'?'lasso':'rectangle';poll();assert.equal(menu.hidden,true,'switching selection tools dismisses the old companion session');env.tool=kind;
+ bridge.beginSelectionGesture();assert.equal(menu.hidden,true,'new gesture dismisses obsolete actions');assert.equal(completed().length,start+1,'gesture begin/cancel never opens an input');
+}
+env.tool='select';let start=completed().length;assert.equal(bridge.completeSelectionGesture('select'),true);assert.equal(completed().length,start+1,'legacy marquee has explicit completion');
+env.tool='pen';assert.equal(bridge.completeSelectionGesture('pen'),false);env.tool='hand';assert.equal(bridge.completeSelectionGesture('rectangle'),false);
+env.tool='rectangle';env.marqueeIds.clear();env.selected=null;assert.equal(bridge.completeSelectionGesture('rectangle'),false,'empty selection never opens input');
+env.marqueeIds=new Set(['a','b']);bridge.receiveSnapshot({version:1,projectId:'Project A',materials:[],mode:'focus'});assert.equal(bridge.completeSelectionGesture('rectangle'),false,'Focus never opens input');
+console.log('PASS: actual rectangle/lasso completion contract, two-card references, no click duplicate, begin/cancel, retained anchored menu, stale tool, empty and Focus guards');
+
+// Over-limit selections stay explicit instead of silently taking the first eight.
+env.tool='rectangle';bridge.receiveSnapshot({version:1,projectId:'Project A',materials:[],mode:'cocreate'});
+env.state.cards=Array.from({length:9},(_,i)=>({id:i===0?'a':'many-'+i,title:'Synthetic '+i}));env.marqueeIds=new Set(env.state.cards.map(c=>c.id));
+start=completed().length;const prompts=messages.filter(m=>m.action==='openAgent').length;
+assert.equal(bridge.completeSelectionGesture('rectangle'),false);assert.equal(completed().length,start);
+assert.equal(bridge.openAgent('Synthetic',env.state.cards),false);assert.equal(messages.filter(m=>m.action==='openAgent').length,prompts);
+console.log('PASS: nine-card selection and explicit prompts are rejected without partial reference submission');

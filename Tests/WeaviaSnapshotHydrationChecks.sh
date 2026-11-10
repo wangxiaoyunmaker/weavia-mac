@@ -13,8 +13,8 @@ python3 - "$TMP/MacWorkspaceCanvas.swift" <<'PYTEST'
 from pathlib import Path
 import sys
 p=Path(sys.argv[1]); t=p.read_text()
-assert 'config.websiteDataStore = .default()' in t
-t=t.replace('config.websiteDataStore = .default()', 'config.websiteDataStore = .nonPersistent()\n        config.userContentController.addUserScript(WKUserScript(source: "window.requestAnimationFrame = function(){ window.fixtureFrameRequests=(window.fixtureFrameRequests||0)+1; return 1; };", injectionTime: .atDocumentStart, forMainFrameOnly: true))')
+assert 'config.websiteDataStore = websiteDataStore' in t
+t=t.replace('config.websiteDataStore = websiteDataStore', 'config.websiteDataStore = .nonPersistent()\n        config.userContentController.addUserScript(WKUserScript(source: "window.requestAnimationFrame = function(){ window.fixtureFrameRequests=(window.fixtureFrameRequests||0)+1; return 1; };", injectionTime: .atDocumentStart, forMainFrameOnly: true))')
 p.write_text(t)
 PYTEST
 if [[ "${INSTRUMENT_NATIVE:-0}" == 1 ]]; then
@@ -27,5 +27,5 @@ p.write_text(t)
 PY
 fi
 S=Sources/MouseCompanion
-swiftc -module-cache-path "$ROOT/.build/arm64-apple-macosx/release/ModuleCache" "$S/CompanionContext.swift" "$S/CompanionProjectStore.swift" "$S/DesignSuggestions.swift" "$S/DesignOCR.swift" "$S/MaterialPresentation.swift" "$S/MacWorkspaceStorage.swift" "$TMP/BundleModule.swift" "$TMP/MacWorkspaceCanvas.swift" Tests/WeaviaSnapshotHydrationChecks.swift -o "$TMP/WeaviaSnapshotHydrationChecks"
+swiftc -module-cache-path "$ROOT/.build/arm64-apple-macosx/release/ModuleCache" "$S/CompanionContext.swift" "$S/CompanionProjectStore.swift" "$S/DesignSuggestions.swift" "$S/DesignOCR.swift" "$S/MaterialPresentation.swift" "$S/MacWorkspaceStorage.swift" "$S/CanvasAttachments.swift" "$TMP/BundleModule.swift" "$TMP/MacWorkspaceCanvas.swift" Tests/WeaviaSnapshotHydrationChecks.swift -o "$TMP/WeaviaSnapshotHydrationChecks"
 "$TMP/WeaviaSnapshotHydrationChecks" "$TMP/data" "${@:1}"

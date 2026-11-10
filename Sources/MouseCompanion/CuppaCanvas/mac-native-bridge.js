@@ -38,6 +38,7 @@
  const pending=new Map(),placements=new Map(),waiters=new Map(),memoryListeners=new Set();let activeAgent='',protectedError='',transactionBusy=false;
  let pendingRaw=null,lastAcknowledgedRaw=null,cacheWarning=false;
  const smartTagWaiters=new Map();
+ const attachmentWaiters=new Map();
  const volatileCache=new Map();
  function cacheRead(key){if(volatileCache.has(key))return volatileCache.get(key);try{return localStorage.getItem(key);}catch{cacheWarning=true;return null;}}
  function cacheWrite(key,raw){volatileCache.set(key,raw);try{localStorage.setItem(key,raw);return true;}catch{cacheWarning=true;return false;}}
@@ -52,11 +53,11 @@
  const project=()=>new URLSearchParams(location.search).get('project')||'';
  const dirtyKey=()=> 'cuppa-mac-pending:'+project();
  function post(action,payload={}){const requestId='mac:'+Date.now()+':'+(++sequence);pending.set(requestId,{...payload,action});handler.postMessage({...payload,version:1,action,requestId,projectId:project()});return requestId;}
- function context(cards){return cards.map(c=>({id:c.id,nativeMaterialId:c.nativeMaterialId||'',title:c.title||'',text:c.text||'',url:webURL(c.url),imageDataURL:inlineImageURL(c.image||c.preview),provenance:c.provenance||{}}));}
+ function context(cards){return cards.map(c=>({id:c.id,nativeMaterialId:c.nativeMaterialId||'',title:c.title||'',text:c.text||'',url:webURL(c.designObject?.originalUrl||c.url),imageDataURL:inlineImageURL(c.image||c.preview),provenance:c.provenance||{}}));}
  function selectedCards(){const ids=typeof marqueeIds!=='undefined'&&marqueeIds.size?[...marqueeIds]:selected?[selected]:[];return state.cards.filter(c=>ids.includes(c.id));}
  // Selection is initiated only by a finished gesture, never by the polling mirror.
  let selectionDelayMS=500;
- let selectionEpoch=0,selectionSession='',selectionGeometry='',selectionIDs='',gesture=null,selectionAnchor=null;
+ let selectionEpoch=0,selectionSession='',selectionGeometry='',selectionIDs='',selectionTool='',gesture=null,selectionAnchor=null;
  function selectionBounds(){
   const ids=new Set(selectedCards().map(c=>c.id));
   const rects=[...document.querySelectorAll('.card')].filter(el=>ids.has(el.dataset.id)).map(el=>el.getBoundingClientRect()).filter(r=>r.width>0&&r.height>0);
@@ -65,14 +66,22 @@
   const right=Math.min(innerWidth,Math.max(...rects.map(r=>r.right))),bottom=Math.min(innerHeight,Math.max(...rects.map(r=>r.bottom)));
   return right>x&&bottom>y?{x,y,width:right-x,height:bottom-y,viewportWidth:innerWidth,viewportHeight:innerHeight}:null;
  }
- function selectionToolActive(){return typeof tool!=='undefined'&&tool==='select'&&!(typeof canvasAction!=='undefined'&&canvasAction)&&!(typeof picking!=='undefined'&&picking);}
+ function selectionToolActive(){return typeof tool!=='undefined'&&['select','rectangle','lasso'].includes(tool)&&!(typeof canvasAction!=='undefined'&&canvasAction)&&!(typeof picking!=='undefined'&&picking);}
  function selectionBlocked(){return !selectionToolActive()||!initialized||mode!=='cocreate'||transactionBusy||protectedError||document.hidden||location.hash!=='#cuppa'||!!document.querySelector('dialog[open]')||!!document.activeElement?.matches('input,textarea,[contenteditable="true"]')||!!root.cuppaCaptureBusy||!!root.cuppaRelationBusy;}
- function closeNativeSelection(){const menu=document.getElementById('selection-actions');if(menu)menu.hidden=true;selectionEpoch++;selectionSession='';selectionAnchor=null;post('selectionEnded');}
+ function closeNativeSelection(){const menu=document.getElementById('selection-actions');if(menu)menu.hidden=true;selectionEpoch++;selectionSession='';selectionAnchor=null;selectionTool='';post('selectionEnded');}
  function completeSelection(explicit=false){
-  if(selectionBlocked())return;
-  const bounds=selectionBounds(),cards=context(selectedCards());if(!bounds||!cards.length)return;
-  selectionSession='selection:'+ (++selectionEpoch);selectionGeometry=JSON.stringify(bounds);selectionIDs=cards.map(c=>c.id).sort().join('\0');selectionAnchor=null;
-  post('selectionCompleted',{cards,bounds,selectionSession,explicit});
+  if(selectionBlocked())return false;
+  const bounds=selectionBounds(),cards=context(selectedCards());if(!bounds||!cards.length)return false;
+  if(cards.length>8){notify('每次最多向伙伴提供 8 张卡片，请在参考预览中减少勾选或缩小选区。');return false;}
+  selectionSession='selection:'+ (++selectionEpoch);selectionTool=tool;selectionGeometry=JSON.stringify(bounds);selectionIDs=cards.map(c=>c.id).sort().join('\0');selectionAnchor=null;
+  post('selectionCompleted',{cards,bounds,selectionSession,explicit});return true;
+ }
+ // Canvas tools own their pointer capture and stop propagation. Complete at the
+ // authoritative gesture boundary instead of hoping a later DOM listener runs.
+ function beginSelectionGesture(){gesture=null;closeNativeSelection();}
+ function completeSelectionGesture(kind){
+  if(!['select','rectangle','lasso'].includes(kind)||typeof tool==='undefined'||tool!==kind)return false;
+  gesture=null;return completeSelection();
  }
  function alignSelection(value){
   if(!value||value.projectId!==project()||value.selectionSession!==selectionSession)return false;
@@ -95,7 +104,7 @@
    selectionEpoch++;gesture=null;
    if(e.target.closest('#selection-actions'))return;
    const card=e.target.closest('.card'),blank=e.target.id==='workspace'||e.target.id==='world';
-   gesture=selectionToolActive()&&!e.target.closest(editable)&&(card||blank)?{id:e.pointerId,x:e.clientX,y:e.clientY,moved:false,threshold:e.pointerType==='mouse'?1:3,marquee:blank}:null;
+   gesture=selectionToolActive()&&tool==='select'&&!e.target.closest(editable)&&(card||blank)?{id:e.pointerId,x:e.clientX,y:e.clientY,moved:false,threshold:e.pointerType==='mouse'?1:3,marquee:blank}:null;
    if(card||blank)closeNativeSelection();
   },true);
   document.addEventListener('pointermove',e=>{
@@ -126,7 +135,7 @@
   const close=document.getElementById('selection-close');if(close)close.onclick=()=>{document.getElementById('selection-actions').hidden=true;closeNativeSelection();};
  }
  function saveNative(){if(!initialized||protectedError||transactionBusy)return;const snapshot=clone(state);if(JSON.stringify(snapshot)===lastAcknowledgedRaw&&!pendingRaw)return;stage(snapshot);post('saveCanvas',{snapshot});}
- function agent(prompt='',cards=selectedCards()){activeAgent=post('openAgent',{prompt,cards:context(cards)});}
+ function agent(prompt='',cards=selectedCards()){if(cards.length>8){notify('每次最多向伙伴提供 8 张卡片，请减少选择后重试。');return false;}activeAgent=post('openAgent',{prompt,cards:context(cards)});return true;}
  function refresh(restoreGraph=false){
   state.cards.forEach(c=>{if(c.type==='source')prepareResource(c);prepareCardTags(c);if(c.type==='claim')prepareClaim(c);});
   renderCards();renderSide();
@@ -163,11 +172,12 @@
    initialized=true;canvasPersistedToken=JSON.stringify(state);cacheWrite(canvasStorageKey,canvasPersistedToken);
    if(value.mode==='focus'||value.mode==='cocreate')mode=value.mode;
    cuppaWorkModeV1.sync({available:true,mode,revision:value.revision||0});
-   if(first||before!==JSON.stringify(state)){refresh(first);saveNative();}
+   if(first||before!==JSON.stringify(state)){refresh(first);root.cuppaCanvasHistory?.external(state);saveNative();}
    root.weaviaProjectDesktop?.update?.(cuppaBootstrap.projects||[],project(),materials);if(first){readyResolve();memoryListeners.forEach(f=>f());}return {ok:true,count:state.cards.length};
   }catch(error){notify('Mac 画布同步失败：'+error.message);return {ok:false,message:error.message};}
  }
  function ack(id,result){const request=pending.get(id);if(!request)return false;pending.delete(id);
+  if(request.action==='importAttachment'){const waiter=attachmentWaiters.get(id);if(waiter){attachmentWaiters.delete(id);clearTimeout(waiter.timer);if(waiter.project!==project())waiter.reject(Error('项目已切换，未添加卡片。'));else result.ok?waiter.resolve(result):waiter.reject(Error(result.message||'原件导入失败。'));}return true;}
   if(request.action==='setWorkMode'||request.action==='openSettings'){if(result.mode)mode=result.mode;cuppaWorkModeV1.ack(request.token,{...result,mode});}
   if(request.action==='trayCommand'){if(request.token)cuppaTrayInbox.ack(request.token,result);if(!result.ok)(request.ids||[]).forEach(id=>placements.delete(id));}
   if(request.action==='saveCanvas'){
@@ -198,7 +208,7 @@
    const prior=next._companionPersistence,current=state._companionPersistence;
    next._companionPersistence={...prior,version:1,revision:Math.max(prior?.revision||0,current?.revision||0)+1,captureIds:[...new Set([...(current?.captureIds||[]),...(prior?.captureIds||[])])]};
    const raw=stage(next);canvasPersistedToken=raw;cacheWrite(canvasStorageKey,raw);
-   if(initialized)post('saveCanvas',{snapshot:clone(next)});return raw;
+   if(initialized)post('saveCanvas',{snapshot:clone(next)});root.cuppaCanvasHistory?.record(next);return raw;
   };
   selectionTaskPanel=(cards,prompt)=>agent(prompt,state.cards.filter(c=>cards.some(v=>v.id===c.id)));
   launchAiConversation=()=>agent(draft().text,state.cards.filter(c=>(draft().refs||[]).some(r=>r.id===c.id)));
@@ -224,7 +234,7 @@
   let workToken='',contextToken='',trayToken='';setInterval(()=>{
    const tray=cuppaTrayInbox.inspect().request;if(tray&&tray.token!==trayToken){trayToken=tray.token;if(tray.placement)tray.ids.forEach((id,i)=>placements.set(id,{x:tray.placement.x+i*28,y:tray.placement.y+i*28}));post('trayCommand',{token:tray.token,command:tray.action,ids:tray.ids,placement:tray.placement});}
    const request=cuppaWorkModeV1.peek();if(request&&request.token!==workToken){workToken=request.token;post(request.action==='settings'?'openSettings':'setWorkMode',request);}
-   if(selectionSession){if(!selectionToolActive()||mode!=='cocreate'||location.hash!=='#cuppa'||selectedCards().map(c=>c.id).sort().join('\0')!==selectionIDs){closeNativeSelection();}else if(!gesture){const bounds=selectionBounds(),raw=JSON.stringify(bounds);if(bounds&&raw!==selectionGeometry){selectionGeometry=raw;post('selectionGeometry',{bounds,selectionSession});}}}
+   if(selectionSession){if(!selectionToolActive()||tool!==selectionTool||mode!=='cocreate'||location.hash!=='#cuppa'||selectedCards().map(c=>c.id).sort().join('\0')!==selectionIDs){closeNativeSelection();}else if(!gesture){const bounds=selectionBounds(),raw=JSON.stringify(bounds);if(bounds&&raw!==selectionGeometry){selectionGeometry=raw;post('selectionGeometry',{bounds,selectionSession});}}}
    const selection=context(selectedCards()),signature=JSON.stringify(selection);if(signature!==lastSelection){lastSelection=signature;post('selectCards',{cards:selection,ids:selection.map(c=>c.id)});}
    const capture=cuppaContextCapture.peek();if(capture&&capture.token!==contextToken){contextToken=capture.token;agent('',state.cards.filter(c=>capture.selectionIds.includes(c.id)));cuppaContextCapture.ack(capture.token,{status:'added',message:'已打开伙伴参考，请检查后发送。'});}
    const inspiration=cuppaInspirationV1.take(mode);if(inspiration?.action==='start')agent();
@@ -242,6 +252,19 @@
   return false;
  }
 
+ function importAttachment(kind){
+  if(!['image','pdf'].includes(kind))return Promise.reject(Error('不支持的原件类型。'));
+  const id=post('importAttachment',{kind});
+  return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{attachmentWaiters.delete(id);reject(Error('选择文件等待超时，请重新打开卡片编辑。'));},600000);attachmentWaiters.set(id,{resolve,reject,timer,project:project()});});
+ }
+ async function commitCanvasCard(card,expected,expectedProject){
+  if(expectedProject!==project())throw Error('项目已切换，未添加卡片。');
+  const next=clone(state),index=next.cards.findIndex(c=>c.id===card.id);
+  if(JSON.stringify(index<0?null:next.cards[index])!==(expected===null?'null':expected))throw Error('原卡片已变化，未覆盖原数据。');
+  if(index<0)next.cards.push(clone(card));else next.cards[index]=clone(card);
+  next._companionPersistence={...next._companionPersistence,version:1,revision:(next._companionPersistence?.revision||0)+1,captureIds:next._companionPersistence?.captureIds||[]};
+  return commitNative(next);
+ }
  function requestSmartTags(card){
   const id=post('generateSmartTags',{card});let cancel;
   const promise=new Promise((resolve,reject)=>{
@@ -263,12 +286,13 @@
  }
 
  function protect(message){
-  protectedError=message;cuppaBootstrap.error=message;
+  protectedError=message;cuppaBootstrap.error=message;root.cuppaCanvasHistory?.update?.();
   let banner=document.getElementById('mac-storage-warning');if(!banner){banner=document.createElement('div');banner.id='mac-storage-warning';banner.setAttribute('role','alert');Object.assign(banner.style,{position:'fixed',top:'8px',left:'18%',right:'18%',zIndex:'99999',padding:'12px',background:'#fff2f0',color:'#a8071a',border:'1px solid #ffccc7',borderRadius:'8px'});document.body.append(banner);}
   banner.textContent=message+' 画布已进入只读保护，原数据未覆盖。'+(cacheWarning&&pendingRaw?' 待保存草稿仅保留在当前窗口，请勿关闭。':' 请修复后重新打开。');
  }
- async function commitNative(next){
+ async function commitNative(next,historyReplay=false,expectedState=null){
   await readyPromise;if(protectedError)throw Error(protectedError);if(transactionBusy)throw Error('另一项本机提交尚未完成，请重试。');
+  if(expectedState!==null&&JSON.stringify(state)!==expectedState)throw Error('画布已有新的修改，未覆盖新内容。');
   validateSnapshot(next);transactionBusy=true;const raw=JSON.stringify(next);
   try{
    // Keep a recoverable pending candidate, but do not publish success before native disk acknowledgement.
@@ -276,6 +300,7 @@
    const id=post('saveCanvas',{snapshot:clone(next)});
    await new Promise((resolve,reject)=>{const timer=setTimeout(()=>{waiters.delete(id);protect('尚未确认本机保存结果，待保存副本已保留。');reject(Error(protectedError));},15000);waiters.set(id,{resolve,reject,timer});});
    state=clone(next);canvasPersistedToken=raw;
+   if(!historyReplay)root.cuppaCanvasHistory?.record(state);
    cacheWrite(canvasStorageKey,raw);
    return {snapshot:clone(next),cacheRaw:raw,warning:protectedError};
   }catch(error){
@@ -283,6 +308,13 @@
    if(!protectedError)protect(error.message||'本机保存失败，待保存草稿仍保留。');throw error;
   }
   finally{transactionBusy=false;if(queued&&!protectedError){const value=queued;queued=null;setTimeout(()=>receiveSnapshot(value),0);}}
+ }
+ async function commitCanvasHistory(next,expected){
+  await readyPromise;
+  if(JSON.stringify(state)!==expected)throw Error('画布已有新的修改，未覆盖新内容。');
+  if(root.cuppaCaptureBusy||root.cuppaRelationBusy)throw Error('另一项画布操作正在保存，请稍后重试。');
+  next=clone(next);next._companionPersistence={...state._companionPersistence,version:1,revision:(state._companionPersistence?.revision||0)+1,captureIds:state._companionPersistence?.captureIds||[]};
+  return commitNative(next,true,expected);
  }
  async function commitRelation(id,active,expected,before,after,index){
   if(id!==project()||expected!==canvasPersistedToken||JSON.stringify(active)!==JSON.stringify(state))throw Error('画布或项目已变化，未提交旧关系。');
@@ -314,5 +346,5 @@
   return Object.freeze({read:()=>run('read'),put:(token,input)=>run('put',token,input),remove:(token,id)=>run('remove',token,id),undoLast:token=>run('undoLast',token),canUndo:token=>engine.canUndo(token),subscribe:listener=>{listeners.add(listener);return ()=>listeners.delete(listener);},dispose:()=>{memoryListeners.delete(changed);legacy.dispose();},peek:()=>{if(!cache)throw Error('请先打开项目记忆。');return cache;}});
  }
 
- root.mouseCompanionMac=Object.freeze({dismissSelection:closeNativeSelection,openMaterial:id=>post('trayCommand',{command:'open',ids:[id]}),openExternal:url=>{const safe=webURL(url);if(safe)post('openURL',{url:safe});},alignSelection,createMemoryStore,receiveAgentResult,requestSmartTags,receiveSmartTagResult,commitSmartTags,boot,install,receiveSnapshot,ack,openAgent:agent,switchProject:targetProjectId=>post('switchProject',{targetProjectId}),createProject:name=>post('createProject',{name})});
+ root.mouseCompanionMac=Object.freeze({beginSelectionGesture,completeSelectionGesture,importAttachment,commitCanvasCard,previewAttachment:(attachmentId,pageNumber)=>post('previewAttachment',{attachmentId,...(Number.isInteger(pageNumber)?{pageNumber}:{})}),dismissSelection:closeNativeSelection,openMaterial:id=>post('trayCommand',{command:'open',ids:[id]}),openExternal:url=>{const safe=webURL(url);if(safe)post('openURL',{url:safe});},alignSelection,createMemoryStore,commitCanvasHistory,receiveAgentResult,requestSmartTags,receiveSmartTagResult,commitSmartTags,boot,install,receiveSnapshot,ack,openAgent:agent,switchProject:targetProjectId=>post('switchProject',{targetProjectId}),createProject:name=>post('createProject',{name})});
 })(globalThis);

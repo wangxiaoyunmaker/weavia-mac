@@ -77,10 +77,10 @@
   $('#canvas-context-close').onclick = closePreview;
   $('#canvas-context-add').onclick = requestContext;
   $('#canvas-context-card-actions').onclick = () => {
-    if (!preview) return;
+    if (!preview || !preview.checked.size || preview.checked.size > 8 || pending) return;
     applySelection([...preview.checked], null);
     panel.hidden = true; pending = null; syncPreviewToggle();
-    if (marqueeIds.size) { $('#selection-actions').hidden = false; revealSelectionMenu(); }
+    if (marqueeIds.size && !globalThis.mouseCompanionMac?.completeSelectionGesture(tool)) { $('#selection-actions').hidden = false; revealSelectionMenu(); }
   };
 
   function validPoint(p) { return Array.isArray(p) && p.length === 2 && p.every(n => Number.isFinite(n) && Math.abs(n) <= 100000); }
@@ -217,6 +217,7 @@
     }
     e.preventDefault(); e.stopImmediatePropagation();
     const before = selectionSnapshot();
+    globalThis.mouseCompanionMac?.beginSelectionGesture();
     document.activeElement?.blur(); globalThis.cuppaCompanion?.cancel();
     globalThis.mouseCompanionActions?.execute({ op: 'cancel' });
     cancelCanvasAction(); hidePort(); if (typeof hideTagTools === 'function') hideTagTools();
@@ -272,6 +273,11 @@
     }
     applySelection(ids, null);
     if (g.kind !== 'pen') remember({ kind: 'selection', before: g.before, after: selectionSnapshot() });
+    if (g.kind !== 'pen' && globalThis.mouseCompanionMac?.completeSelectionGesture(g.kind)) {
+      closePreview();
+      say(labels[g.kind] + '已选 ' + ids.length + ' 张卡片，可以直接向伙伴提问。');
+      return;
+    }
     showPreview(ids, g.kind);
     say(g.kind === 'pen' ? '画笔已保存在此项目，未发送给伙伴。' : labels[g.kind] + '命中 ' + ids.length + ' 张卡片，请确认参考文字。');
   }
@@ -311,7 +317,7 @@
     const add = $('#canvas-context-add');
     add.disabled = !available || !count || count > 8 || !!pending || !!globalThis.cuppaBootstrap?.error;
     add.textContent = pending ? '等待伙伴确认…' : '加入伙伴参考';
-    $('#canvas-context-card-actions').disabled = !count || !!pending;
+    $('#canvas-context-card-actions').disabled = !count || count > 8 || !!pending;
     $('#canvas-context-status').textContent = message || (pending ? '请在伙伴窗口确认，尚未发送模型。' : available ? '加入后仍需在伙伴窗口确认；不会自动发送模型。' : '伙伴参考入口需在鸿蒙应用中使用；这里仍可圈选、批注和操作卡片。');
   }
   function showPreview(ids, kind) {
@@ -354,7 +360,7 @@
     }
     if (preview && next !== preview.kind) closePreview();
   }
-  globalThis.cuppaCanvasTools = Object.freeze({ render, onToolChange, cancel: abortGesture, showSearch });
+  globalThis.cuppaCanvasTools = Object.freeze({ render, onToolChange, cancel: abortGesture, showSearch, resetHistory: () => { history = []; closePreview(); render(); } });
   globalThis.cuppaInspirationV1 = Object.freeze({
     take(mode) { inspirationMode = mode === 'cocreate' ? 'cocreate' : 'focus'; const result = inspirationCommand; inspirationCommand = null; return result; }
   });
@@ -412,7 +418,7 @@
     }
     if (e.key === 'Escape' && !$('#source-panel').hidden && $('#add-menu').hidden && $('#more-menu').hidden && !picking) { e.preventDefault(); e.stopImmediatePropagation(); hideSearch(); $('#query').focus(); return; }
     if (editing) return;
-    if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'z' && (modes.includes(tool) || history.length || !panel.hidden)) {
+    if (!globalThis.cuppaCanvasHistory && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'z' && (modes.includes(tool) || history.length || !panel.hidden)) {
       e.preventDefault(); e.stopImmediatePropagation(); undo(); return;
     }
     if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;

@@ -20,8 +20,8 @@ fi
 python3 - "$TMP/MacWorkspaceCanvas.swift" <<'PYSAFE'
 from pathlib import Path
 import sys
-p=Path(sys.argv[1]);p.write_text(p.read_text().replace('config.websiteDataStore = .default()', 'config.websiteDataStore = .nonPersistent()'))
+p=Path(sys.argv[1]);p.write_text(p.read_text().replace('config.websiteDataStore = websiteDataStore', 'config.websiteDataStore = .nonPersistent()'))
 PYSAFE
 S=Sources/MouseCompanion
-swiftc -module-cache-path "$ROOT/.build/arm64-apple-macosx/release/ModuleCache" "$S/CompanionContext.swift" "$S/CompanionProjectStore.swift" "$S/DesignSuggestions.swift" "$S/DesignOCR.swift" "$S/MaterialPresentation.swift" "$S/MacWorkspaceStorage.swift" "$TMP/BundleModule.swift" "$TMP/MacWorkspaceCanvas.swift" Tests/WeaviaSmartTagsUIChecks.swift -o "$TMP/WeaviaSmartTagsUIChecks"
+swiftc -module-cache-path "$ROOT/.build/arm64-apple-macosx/release/ModuleCache" "$S/CompanionContext.swift" "$S/CompanionProjectStore.swift" "$S/DesignSuggestions.swift" "$S/DesignOCR.swift" "$S/MaterialPresentation.swift" "$S/MacWorkspaceStorage.swift" "$S/CanvasAttachments.swift" "$TMP/BundleModule.swift" "$TMP/MacWorkspaceCanvas.swift" Tests/WeaviaSmartTagsUIChecks.swift -o "$TMP/WeaviaSmartTagsUIChecks"
 "$TMP/WeaviaSmartTagsUIChecks" "$TMP/data" "${@:1}"

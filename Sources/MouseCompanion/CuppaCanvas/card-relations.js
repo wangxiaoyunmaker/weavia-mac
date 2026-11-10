@@ -1,4 +1,5 @@
-/* User-authored annotations only. No inference, network calls or memory promotion. */
+/* Explicit relationship annotations. Assistant examples remain pending and attributed.
+ * No inference, network calls or memory promotion. */
 (function(root){
  'use strict';
  const kinds={related:'普通关联',similar:'相似',different:'差异',complementary:'互补',conflicting:'冲突',custom:'自定义'};
@@ -6,7 +7,7 @@
  function supported(edge){
   if(!Object.prototype.hasOwnProperty.call(edge,'relation'))return true;
   const r=edge.relation;
-  return object(r)&&r.version===1&&r.source==='user'&&Object.hasOwn(kinds,r.kind)&&
+  return object(r)&&r.version===1&&['user','assistant'].includes(r.source)&&(r.source!=='assistant'||r.status==='pending')&&Object.hasOwn(kinds,r.kind)&&
    typeof r.customLabel==='string'&&typeof r.evidence==='string'&&['pending','confirmed'].includes(r.status)&&
    Array.isArray(r.history)&&r.history.every(object);
  }
@@ -14,7 +15,7 @@
  function view(edge){
   if(!supported(edge))return {label:'暂不支持的关系',status:'unsupported',statusLabel:'保留原数据'};
   if(!edge.relation)return {label:'普通连线',status:'legacy',statusLabel:'未标注'};
-  const r=edge.relation;return {label:r.kind==='custom'?r.customLabel:kinds[r.kind],status:r.status,statusLabel:r.status==='confirmed'?'已确认':'待确认'};
+  const r=edge.relation;return {label:r.kind==='custom'?r.customLabel:kinds[r.kind],status:r.status,statusLabel:r.source==='assistant'?'助手示例 · 待确认':r.status==='confirmed'?'已确认':'待确认',source:r.source};
  }
  function validate(input){
   if(!object(input)||!Object.hasOwn(kinds,input.kind)||typeof input.customLabel!=='string'||typeof input.evidence!=='string')throw Error('关系格式不正确。');
@@ -29,8 +30,8 @@
   if(decision==='confirm'&&!f.evidence)throw Error('明确确认前，请补充支持这一判断的依据。');
   const status=decision==='confirm'?'confirmed':decision==='withdraw'||changed||!prior?'pending':prior.status;
   if(prior&&!changed&&status===prior.status)return edge;
-  const event={at:now,action:!prior?'annotated':changed?'edited':status==='confirmed'?'confirmed':'withdrawn',kind:f.kind,customLabel:f.customLabel,evidence:f.evidence,status};
-  return {...edge,relation:{...prior,version:1,source:'user',...f,status,createdAt:prior?.createdAt||now,updatedAt:now,confirmedAt:status==='confirmed'?(decision==='confirm'?now:prior?.confirmedAt||null):null,history:[...(prior?.history||[]),event]}};
+  const event={at:now,author:'user',action:!prior?'annotated':changed?'edited':status==='confirmed'?'confirmed':'withdrawn',kind:f.kind,customLabel:f.customLabel,evidence:f.evidence,status};
+  return {...edge,relation:{...prior,version:1,source:'user',...(prior?.source==='assistant'?{originSource:'assistant'}:{}),...f,status,createdAt:prior?.createdAt||now,updatedAt:now,confirmedAt:status==='confirmed'?(decision==='confirm'?now:prior?.confirmedAt||null):null,history:[...(prior?.history||[]),event]}};
  }
  function pairExists(edges,from,to,except){return edges.find(e=>e.id!==except&&((e.from===from&&e.to===to)||(e.from===to&&e.to===from)));}
  root.CardRelations={kinds,supported,fields,view,validate,update,pairExists};

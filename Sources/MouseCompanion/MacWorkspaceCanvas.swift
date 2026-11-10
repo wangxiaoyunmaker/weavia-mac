@@ -1,6 +1,22 @@
 import AppKit
 import WebKit
 import CryptoKit
+import PDFKit
+import UniformTypeIdentifiers
+
+/// Route canvas shortcuts before AppKit's generic Edit menu, while leaving
+/// WebKit text-field undo and every other app window on the normal responder chain.
+final class WeaviaCanvasWindow: NSWindow {
+    var onCanvasHistory: ((Bool) -> Void)?
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if event.charactersIgnoringModifiers?.lowercased() == "z", modifiers.contains(.command),
+           !modifiers.contains(.option), !modifiers.contains(.control), let onCanvasHistory {
+            onCanvasHistory(modifiers.contains(.shift)); return true
+        }
+        return super.performKeyEquivalent(with: event)
+    }
+}
 
 /// Hosts the teammate's CUPPA canvas without changing the native companion and tray UI.
 final class MacWorkspaceCanvas: NSObject, WKNavigationDelegate, WKScriptMessageHandler, WKUIDelegate {
@@ -8,6 +24,10 @@ final class MacWorkspaceCanvas: NSObject, WKNavigationDelegate, WKScriptMessageH
     private(set) var webView: WKWebView!
     private let context: CompanionContext
     private let assets = MacWorkspaceAssetHandler()
+    private let attachments = CanvasAttachmentStore()
+    private lazy var attachmentHandler = CanvasAttachmentHandler(store: attachments)
+    private var attachmentWindows: [NSWindow] = []
+    private var importingAttachment = false
     private var destination = "projects"
     private let snapshots = MacCanvasSnapshotStore()
     private var resourceRoot: URL?
@@ -34,23 +54,32 @@ final class MacWorkspaceCanvas: NSObject, WKNavigationDelegate, WKScriptMessageH
     var onCancelAgent: (() -> Void)?
     var onOpenMaterial: ((String) -> Void)?
 
-    init(context: CompanionContext) {
+    init(context: CompanionContext, websiteDataStore: WKWebsiteDataStore = .default()) {
         self.context = context
-        window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 820), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+        window = WeaviaCanvasWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 820), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
         super.init()
         window.title = "WEAVIA · " + context.project
         window.minSize = NSSize(width: 900, height: 600)
         window.isReleasedWhenClosed = false
         window.center()
         let config = WKWebViewConfiguration()
-        config.websiteDataStore = .default()
+        config.websiteDataStore = websiteDataStore
         config.preferences.javaScriptCanOpenWindowsAutomatically = false
         config.userContentController.add(self, name: "mouseCompanion")
         config.setURLSchemeHandler(assets, forURLScheme: "weavia-asset")
+        config.setURLSchemeHandler(attachmentHandler, forURLScheme: "weavia-file")
         webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = self; webView.uiDelegate = self
         webView.setAccessibilityLabel("WEAVIA 项目画布")
         window.contentView = webView
+        (window as? WeaviaCanvasWindow)?.onCanvasHistory = { [weak self] redo in
+            guard let self else { return }
+            self.webView.evaluateJavaScript("globalThis.cuppaCanvasHistory?.keyCommand(\(redo ? "true" : "false")) || false") { handled, _ in
+                if handled as? Bool != true {
+                    NSApp.sendAction(Selector(redo ? "redo:" : "undo:"), to: nil, from: self.webView)
+                }
+            }
+        }
         resourceRoot = Bundle.main.url(forResource: "CuppaCanvas", withExtension: nil)
         if resourceRoot == nil { resourceRoot = Bundle.module.url(forResource: "CuppaCanvas", withExtension: nil) }
         observation = context.observe { [weak self] in self?.scheduleReload() }
@@ -75,6 +104,8 @@ final class MacWorkspaceCanvas: NSObject, WKNavigationDelegate, WKScriptMessageH
         if loadedProject != context.project {
             onCancelSmartTags?(nil)
             endSelection()
+            attachmentHandler.project = context.project
+            attachmentWindows.forEach { $0.close() }; attachmentWindows.removeAll()
             loadedProject = context.project; isReady = false; selectedCards = []
             var parts = URLComponents(url: root.appendingPathComponent("index.html"), resolvingAgainstBaseURL: false)!
             parts.queryItems = [URLQueryItem(name: "project", value: context.project)]
@@ -178,19 +209,40 @@ final class MacWorkspaceCanvas: NSObject, WKNavigationDelegate, WKScriptMessageH
             guard let snapshot = body["snapshot"] as? [String: Any] else { ack(id, ok: false, message: "画布格式无效"); return }
             do { try snapshots.save(snapshot, project: context.project); ack(id, message: "画布已保存到本机", extra: ["revision": revision]) }
             catch { ack(id, ok: false, message: error.localizedDescription) }
+        case "importAttachment":
+            guard let kind = body["kind"] as? String, ["image", "pdf"].contains(kind), !importingAttachment else { ack(id, ok: false, message: "请选择图片或 PDF，或先完成当前选择。"); return }
+            endSelection(); importingAttachment = true
+            let project = context.project, panel = NSOpenPanel()
+            panel.allowedContentTypes = kind == "pdf" ? [.pdf] : [.png, .jpeg, .gif, .tiff, .heic, .webP]
+            panel.allowsMultipleSelection = false; panel.canChooseDirectories = false
+            panel.message = "仅将你选择的原件复制到当前项目本机目录，不上传。单个文件最多 50 MB。"
+            panel.beginSheetModal(for: window) { [weak self] result in
+                guard let self else { return }; self.importingAttachment = false
+                guard self.context.project == project else { self.ack(id, ok: false, message: "项目已切换，未导入文件。"); return }
+                guard result == .OK, let url = panel.url else { self.ack(id, extra: ["cancelled": true]); return }
+                let access = url.startAccessingSecurityScopedResource(); defer { if access { url.stopAccessingSecurityScopedResource() } }
+                do { let record = try self.attachments.importFile(url, kind: kind, project: project)
+                    self.ack(id, extra: ["attachment": self.attachments.payload(record, project: project)])
+                } catch { self.ack(id, ok: false, message: error.localizedDescription) }
+            }
+        case "previewAttachment":
+            guard let attachmentID = body["attachmentId"] as? String else { ack(id, ok: false); return }
+            do { try previewAttachment(attachmentID, pageNumber: body["pageNumber"] as? Int ?? 1); ack(id) } catch { ack(id, ok: false, message: error.localizedDescription) }
         case "selectionEnded": endSelection(); ack(id)
         case "selectionCompleted":
             guard let session = body["selectionSession"] as? String, let bounds = body["bounds"] as? [String: Any],
                   Self.viewportRect(bounds, in: webView.bounds) != nil else { ack(id, ok: false); return }
+            let cards = body["cards"] as? [[String: Any]] ?? []
+            guard cards.count <= 8 else { endSelection(); ack(id, ok: false, message: "每次最多向伙伴提供 8 张卡片，请减少选择后重试。"); return }
             selectionSession = session; selectionBounds = bounds
-            selectedCards = Array((body["cards"] as? [[String: Any]] ?? []).prefix(8))
+            selectedCards = cards
             selectionCards = selectedCards
             presentSelection(completed: true, explicit: body["explicit"] as? Bool ?? false); ack(id)
         case "selectionGeometry":
             if body["selectionSession"] as? String == selectionSession, let bounds = body["bounds"] as? [String: Any], Self.viewportRect(bounds, in: webView.bounds) != nil {
                 selectionBounds = bounds; presentSelection(completed: false)
             }; ack(id)
-        case "selectCards": selectedCards = Array((body["cards"] as? [[String: Any]] ?? []).prefix(8)); ack(id)
+        case "selectCards": selectedCards = body["cards"] as? [[String: Any]] ?? []; ack(id)
         case "generateSmartTags":
             guard let card = body["card"] as? [String: Any], let generate = onSmartTags else { ack(id, ok: false, message: "智能标签服务尚未就绪。"); return }
             generate(card, id); ack(id)
@@ -200,7 +252,8 @@ final class MacWorkspaceCanvas: NSObject, WKNavigationDelegate, WKScriptMessageH
         case "openAgent":
             let prompt = (body["prompt"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             guard prompt.count <= 16000 else { ack(id, ok: false, message: "问题请控制在 16000 字以内。"); return }
-            let cards = Array((body["cards"] as? [[String: Any]] ?? selectedCards).prefix(8))
+            let cards = body["cards"] as? [[String: Any]] ?? selectedCards
+            guard cards.count <= 8 else { ack(id, ok: false, message: "每次最多向伙伴提供 8 张卡片，请减少选择后重试。"); return }
             onAgent?(prompt, cards, id); ack(id, message: "已交给鼠标伙伴")
         case "cancelAgent": onCancelAgent?(); ack(id, message: "已中止生成")
         case "trayCommand":
@@ -230,6 +283,24 @@ final class MacWorkspaceCanvas: NSObject, WKNavigationDelegate, WKScriptMessageH
         case "openHistory": onHistory?(); ack(id)
         default: ack(id, ok: false, message: "当前 Mac 版暂不支持此操作。")
         }
+    }
+    private func previewAttachment(_ id: String, pageNumber: Int = 1) throws {
+        let record = try attachments.load(id, project: context.project), url = try attachments.original(id, project: context.project)
+        let preview = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 850, height: 700), styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
+        preview.title = record.filename + " · 本机原件"; preview.isReleasedWhenClosed = false
+        if record.kind == "pdf" {
+            guard let document = PDFDocument(url: url) else { throw NSError(domain: "CanvasAttachment", code: 1, userInfo: [NSLocalizedDescriptionKey: "本机 PDF 已损坏，无法预览。"] ) }
+            let view = PDFView(frame: preview.contentView!.bounds); view.autoScales = true; view.displayMode = .singlePageContinuous; view.document = document; if let page = document.page(at: min(max(pageNumber, 1), max(document.pageCount, 1)) - 1) { view.go(to: page) }; preview.contentView = view
+        } else {
+            guard let image = NSImage(contentsOf: url) else { throw NSError(domain: "CanvasAttachment", code: 1, userInfo: [NSLocalizedDescriptionKey: "本机图片已损坏，无法预览。"] ) }
+            let scroll = NSScrollView(frame: preview.contentView!.bounds); scroll.hasHorizontalScroller = true; scroll.hasVerticalScroller = true
+            scroll.allowsMagnification = true; scroll.minMagnification = 0.05; scroll.maxMagnification = 4
+            let view = NSImageView(frame: NSRect(origin: .zero, size: image.size)); view.image = image; view.imageScaling = .scaleNone
+            scroll.documentView = view; preview.contentView = scroll
+            scroll.magnification = min(1, min(scroll.contentSize.width / max(1, image.size.width), scroll.contentSize.height / max(1, image.size.height)))
+        }
+        attachmentWindows.removeAll { !$0.isVisible }; attachmentWindows.append(preview)
+        preview.center(); preview.makeKeyAndOrderFront(nil)
     }
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { /* ready is emitted after all canvas modules load. */ }
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {

@@ -1,8 +1,8 @@
 # WEAVIA · Mac
 
-源码快照：v0.2.6-build8
+源码快照：v0.2.7-build9
 
-状态：历史单行项目头与首次图层恢复版本。
+状态：历史整合候选；撤回、选区、图片/PDF/Figma卡片；存在已知旧pending覆盖新快照风险，后续startup-recovery修复。
 
 这是私有源码备份，不会启动、安装或替换当前应用。默认主分支为最新完整startup-recovery候选；其他已测版本与功能分支见 VERSION_STATUS.md。
 

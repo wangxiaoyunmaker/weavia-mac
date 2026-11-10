@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 
 root = Path(__file__).resolve().parents[1]
-original = root.parent / "mouse-companion-native-prototype"
+original = next(parent / "mouse-companion-native-prototype" for parent in root.parents if (parent / "mouse-companion-native-prototype/Sources/MouseCompanion").is_dir())
 source = root / "Sources/MouseCompanion"
 baseline = original / "Sources/MouseCompanion"
 
