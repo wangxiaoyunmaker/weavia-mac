@@ -15,6 +15,17 @@
   const m=value._companionPersistence;if(m!==undefined&&(m.version!==1||!Number.isSafeInteger(m.revision)||m.revision<1||(m.captureIds!==undefined&&(!Array.isArray(m.captureIds)||m.captureIds.some(id=>typeof id!=='string')))))throw Error('画布存储版本暂不支持，原数据未修改。');
   return value;
  }
+ function canonical(value){
+  if(Array.isArray(value))return '['+value.map(canonical).join(',')+']';
+  if(value&&typeof value==='object')return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+canonical(value[k])).join(',')+'}';
+  return JSON.stringify(value);
+ }
+ function startupChoice(incoming,pendingSnapshot,baseToken,nativeToken){
+  if(!incoming)return pendingSnapshot?'pending':'cache';
+  if(!pendingSnapshot)return 'native';
+  if(canonical(incoming)===canonical(pendingSnapshot))return 'acknowledged';
+  return typeof baseToken==='string'&&baseToken&&baseToken===nativeToken?'pending':'conflict';
+ }
  function mergeMaterials(snapshot,materials){
   const next=clone(snapshot),seen=new Set(next.macNativeMaterialIds||[]);
   for(const m of materials){
@@ -32,11 +43,11 @@
   }
   next.macNativeMaterialIds=[...seen];next.resourceSemanticVersion=1;next.aiExcerptExamplesAdded=true;return next;
  }
- if(typeof module!=='undefined'&&module.exports)module.exports={mergeMaterials,webURL,imageURL,nativeImageURL,validateSnapshot};
+ if(typeof module!=='undefined'&&module.exports)module.exports={mergeMaterials,webURL,imageURL,nativeImageURL,validateSnapshot,startupChoice,canonical};
  const handler=root.webkit?.messageHandlers?.mouseCompanion;if(!handler)return;
  let installed=false,initialized=false,sequence=0,queued=null,lastSelection='',mode='focus';
  const pending=new Map(),placements=new Map(),waiters=new Map(),memoryListeners=new Set();let activeAgent='',protectedError='',transactionBusy=false;
- let pendingRaw=null,lastAcknowledgedRaw=null,cacheWarning=false;
+ let pendingRaw=null,lastAcknowledgedRaw=null,cacheWarning=false,initializing=false,nativeToken=null,canvasSession='',startupCacheRaw=null,recovery=null;
  const smartTagWaiters=new Map();
  const attachmentWaiters=new Map();
  const volatileCache=new Map();
@@ -48,11 +59,12 @@
   if(!el&&document.body){el=document.createElement('div');el.id='mac-save-status';el.setAttribute('role','status');Object.assign(el.style||{}, {position:'fixed',bottom:'10px',right:'16px',zIndex:'99998',padding:'6px 10px',background:'#fff',color:'#555',borderRadius:'6px',fontSize:'12px'});document.body.append(el);}
   if(el){el.textContent=message;el.setAttribute('data-status',status);}
  }
- function stage(snapshot){const raw=JSON.stringify(snapshot);pendingRaw=raw;cacheWrite(dirtyKey(),raw);saveStatus('saving','正在保存到本机…');return raw;}
+ function stage(snapshot){const raw=JSON.stringify(snapshot);if(!pendingRaw&&nativeToken!==null)cacheWrite(dirtyBaseKey(),nativeToken);pendingRaw=raw;cacheWrite(dirtyKey(),raw);saveStatus('saving','正在保存到本机…');return raw;}
  let readyResolve;const readyPromise=new Promise(resolve=>{readyResolve=resolve;});
  const project=()=>new URLSearchParams(location.search).get('project')||'';
  const dirtyKey=()=> 'cuppa-mac-pending:'+project();
- function post(action,payload={}){const requestId='mac:'+Date.now()+':'+(++sequence);pending.set(requestId,{...payload,action});handler.postMessage({...payload,version:1,action,requestId,projectId:project()});return requestId;}
+ const dirtyBaseKey=()=> 'cuppa-mac-pending-base:'+project();
+ function post(action,payload={}){const requestId='mac:'+Date.now()+':'+(++sequence);pending.set(requestId,{...payload,action});handler.postMessage({...payload,version:1,action,requestId,projectId:project(),canvasSession});return requestId;}
  function context(cards){return cards.map(c=>({id:c.id,nativeMaterialId:c.nativeMaterialId||'',title:c.title||'',text:c.text||'',url:webURL(c.designObject?.originalUrl||c.url),imageDataURL:inlineImageURL(c.image||c.preview),provenance:c.provenance||{}}));}
  function selectedCards(){const ids=typeof marqueeIds!=='undefined'&&marqueeIds.size?[...marqueeIds]:selected?[selected]:[];return state.cards.filter(c=>ids.includes(c.id));}
  // Selection is initiated only by a finished gesture, never by the polling mirror.
@@ -134,7 +146,7 @@
   for(const [id,prompt] of [['selection-analyze','请分别单独分析每张卡片，逐一梳理内容要点、设计启发和需要补充的依据，不合并材料。'],['selection-similar','请寻找与所选卡片相关的相似设计案例，并说明相似之处与来源。']]){const button=document.getElementById(id);if(button)button.onclick=()=>{const cards=selectedCards();if(!cards.length)return;closeNativeSelection();document.getElementById('selection-actions').hidden=true;agent(prompt,cards);};}
   const close=document.getElementById('selection-close');if(close)close.onclick=()=>{document.getElementById('selection-actions').hidden=true;closeNativeSelection();};
  }
- function saveNative(){if(!initialized||protectedError||transactionBusy)return;const snapshot=clone(state);if(JSON.stringify(snapshot)===lastAcknowledgedRaw&&!pendingRaw)return;stage(snapshot);post('saveCanvas',{snapshot});}
+ function saveNative(){if(!initialized||initializing||protectedError||transactionBusy)return;const snapshot=clone(state);if(JSON.stringify(snapshot)===lastAcknowledgedRaw&&!pendingRaw)return;stage(snapshot);post('saveCanvas',{snapshot});}
  function agent(prompt='',cards=selectedCards()){if(cards.length>8){notify('每次最多向伙伴提供 8 张卡片，请减少选择后重试。');return false;}activeAgent=post('openAgent',{prompt,cards:context(cards)});return true;}
  function refresh(restoreGraph=false){
   state.cards.forEach(c=>{if(c.type==='source')prepareResource(c);prepareCardTags(c);if(c.type==='claim')prepareClaim(c);});
@@ -156,34 +168,74 @@
   if(transactionBusy){queued=value;return {ok:true,pending:true};}
   if(cuppaBootstrap?.error)return {ok:false,message:cuppaBootstrap.error};
   try{
+   initializing=true;
+   if(typeof value.canvasSession==='string')canvasSession=value.canvasSession;
+   // A queued publish may predate a successful save acknowledgement. Only
+   // first hydration establishes the base; later saves advance it via ack.
+   if(!initialized&&typeof value.canvasToken==='string')nativeToken=value.canvasToken;
    if(Array.isArray(value.projects)){const projects=value.projects.filter(p=>p&&typeof p.id==='string'&&p.id&&typeof p.name==='string');cacheWrite('design-canvas-projects',JSON.stringify(projects));cuppaBootstrap.projects=projects;const name=projects.find(p=>p.id===project())?.name||'CUPPA';document.querySelectorAll('[data-project-name]').forEach(el=>{el.textContent=name;el.title=name;});}
-   const before=JSON.stringify(state);const first=!initialized;
-   const incoming=value.canvasSnapshot;
+   const before=JSON.stringify(state),first=!initialized,incoming=value.canvasSnapshot;
    if(incoming){try{validateSnapshot(incoming);}catch(error){protect(error.message);readyResolve();return {ok:false,message:protectedError};}}
-   if(!initialized&&incoming&&!pendingRaw&&!cacheRead(dirtyKey()))state=clone(incoming);
+   let conflict=null;
+   if(first){
+    const raw=pendingRaw||cacheRead(dirtyKey()),draft=raw?validateSnapshot(JSON.parse(raw)):null;
+    const base=cacheRead(dirtyBaseKey()),choice=startupChoice(incoming,draft,base,nativeToken);
+    if(incoming)lastAcknowledgedRaw=JSON.stringify(incoming);
+    if(choice==='native'||choice==='acknowledged'||choice==='conflict')state=clone(incoming);
+    if(choice==='pending'){state=clone(draft);pendingRaw=raw;}
+    if(choice==='acknowledged'){pendingRaw=null;cacheRemove(dirtyKey());cacheRemove(dirtyBaseKey());}
+    if(choice==='conflict')conflict={pendingRaw:raw,cachedRaw:startupCacheRaw??cacheRead(canvasStorageKey),baseCanvasToken:base||'',reason:'启动时待保存网页副本与本机画布不同，无法证实共同基线。'};
+   }
    validateSnapshot(state);
-   // Legacy snapshots may predate graph fields; missing fields mean an empty graph.
    if(state.regions===undefined)state.regions=[];
    if(state.connections===undefined)state.connections=[];
    const materials=Array.isArray(value.materials)?value.materials:[];
    state=mergeMaterials(state,materials);
    for(const [id,point] of placements){const card=state.cards.find(c=>c.nativeMaterialId===id);if(card){card.x=point.x;card.y=point.y;placements.delete(id);}}
    const tray=cuppaTrayInbox.inspect();cuppaTrayInbox.sync({page:tray.page,projectId:project(),items:materials.map(m=>({...m,project:project(),sourceURL:m.sourceURL||m.url||''}))});
-   initialized=true;canvasPersistedToken=JSON.stringify(state);cacheWrite(canvasStorageKey,canvasPersistedToken);
+   initialized=true;canvasPersistedToken=JSON.stringify(state);
    if(value.mode==='focus'||value.mode==='cocreate')mode=value.mode;
    cuppaWorkModeV1.sync({available:true,mode,revision:value.revision||0});
-   if(first||before!==JSON.stringify(state)){refresh(first);root.cuppaCanvasHistory?.external(state);saveNative();}
-   root.weaviaProjectDesktop?.update?.(cuppaBootstrap.projects||[],project(),materials);if(first){readyResolve();memoryListeners.forEach(f=>f());}return {ok:true,count:state.cards.length};
+   if(first||before!==JSON.stringify(state)){refresh(first);root.cuppaCanvasHistory?.external(state);}
+   root.weaviaProjectDesktop?.update?.(cuppaBootstrap.projects||[],project(),materials);
+   initializing=false;
+   if(conflict){
+    recovery=conflict;protect('发现与本机版本不同的未确认网页副本。当前显示本机画布，双方内容均未被覆盖。');
+    recovery.requestId=post('preserveCanvasRecovery',conflict);
+   }else{canvasPersistedToken=JSON.stringify(state);cacheWrite(canvasStorageKey,canvasPersistedToken);if(first||before!==JSON.stringify(state))saveNative();}
+   if(first){readyResolve();memoryListeners.forEach(f=>f());}
+   return {ok:!conflict,count:state.cards.length,...(conflict?{conflict:true}:{} )};
   }catch(error){notify('Mac 画布同步失败：'+error.message);return {ok:false,message:error.message};}
+  finally{initializing=false;}
+ }
+ function recoverySaved(result){
+  if(!recovery)return;
+  if(!result.ok||!result.recoveryID){saveStatus('failed','待恢复副本尚未得到本机保存确认，请保留当前窗口。');return;}
+  recovery.recoveryID=result.recoveryID;
+  const banner=document.getElementById('mac-storage-warning');if(!banner)return;
+  banner.textContent='网页待保存副本已另存为本机恢复文件。当前显示本机版本；如不确定差异，请先保留只读状态。';
+  const button=document.createElement('button');button.id='mac-recovery-continue';button.type='button';button.textContent='继续使用本机版本（保留待恢复副本）';
+  button.setAttribute('data-mac-recovery-continue','true');
+  button.onclick=()=>{
+   if(!recovery?.recoveryID)return;
+   // This explicit choice only releases the active pending marker. Its exact
+   // original bytes remain in the durable native recovery archive.
+   recovery=null;pendingRaw=null;cacheRemove(dirtyKey());cacheRemove(dirtyBaseKey());
+   protectedError='';delete cuppaBootstrap.error;banner.remove();
+   canvasPersistedToken=JSON.stringify(state);cacheWrite(canvasStorageKey,canvasPersistedToken);
+   root.cuppaCanvasHistory?.external(state);saveNative();
+  };
+  banner.append?.(button);
  }
  function ack(id,result){const request=pending.get(id);if(!request)return false;pending.delete(id);
+  if(request.action==='preserveCanvasRecovery'){if(recovery?.requestId===id)recoverySaved(result);return true;}
   if(request.action==='importAttachment'){const waiter=attachmentWaiters.get(id);if(waiter){attachmentWaiters.delete(id);clearTimeout(waiter.timer);if(waiter.project!==project())waiter.reject(Error('项目已切换，未添加卡片。'));else result.ok?waiter.resolve(result):waiter.reject(Error(result.message||'原件导入失败。'));}return true;}
   if(request.action==='setWorkMode'||request.action==='openSettings'){if(result.mode)mode=result.mode;cuppaWorkModeV1.ack(request.token,{...result,mode});}
   if(request.action==='trayCommand'){if(request.token)cuppaTrayInbox.ack(request.token,result);if(!result.ok)(request.ids||[]).forEach(id=>placements.delete(id));}
   if(request.action==='saveCanvas'){
    const raw=JSON.stringify(request.snapshot);
-   if(result.ok){lastAcknowledgedRaw=raw;if(pendingRaw===raw||(!pendingRaw&&cacheRead(dirtyKey())===raw)){pendingRaw=null;cacheRemove(dirtyKey());saveStatus('saved',cacheWarning?'已保存到本机 · 网页缓存不可用':'已保存到本机');}}
-   else saveStatus('failed',(result.message||'本机保存失败。')+(cacheWarning?' 草稿仅保留在当前窗口，请勿关闭。':' 待保存草稿仍保留。'));
+   if(result.ok){if(typeof result.canvasToken==='string'){nativeToken=result.canvasToken;if(pendingRaw&&pendingRaw!==raw)cacheWrite(dirtyBaseKey(),nativeToken);}lastAcknowledgedRaw=raw;if(pendingRaw===raw||(!pendingRaw&&cacheRead(dirtyKey())===raw)){pendingRaw=null;cacheRemove(dirtyKey());cacheRemove(dirtyBaseKey());saveStatus('saved',cacheWarning?'已保存到本机 · 网页缓存不可用':'已保存到本机');}}
+   else {if(result.storageConflict)protect(result.message||'本机画布已有更新，待保存副本已保留，未覆盖新内容。');saveStatus('failed',(result.message||'本机保存失败。')+(cacheWarning?' 草稿仅保留在当前窗口，请勿关闭。':' 待保存草稿仍保留。'));}
   }
   if(request.action==='generateSmartTags'&&!result.ok){const waiter=smartTagWaiters.get(id);if(waiter){smartTagWaiters.delete(id);clearTimeout(waiter.timer);waiter.reject(Error(result.message||'标签生成未开始。'));}}
   if(request.action==='openAgent'&&!result.ok&&id===activeAgent)activeAgent='';
@@ -195,14 +247,16 @@
   const key=id?'design-canvas-v1:'+id:'design-canvas-v1',raw=cacheRead(key),draftRaw=cacheRead('cuppa-mac-pending:'+id);
   const snapshot=validateSnapshot((draftRaw||raw)?JSON.parse(draftRaw||raw):{resourceSemanticVersion:1,aiExcerptExamplesAdded:true,cards:[],mode:'personal',drafts:{personal:{text:'',sources:[],refs:[]},agent:{text:'',sources:[],refs:[]}}});
   const projects=JSON.parse(cacheRead('design-canvas-projects')||'[]');if(!Array.isArray(projects))throw Error('项目列表格式无法读取，原数据未修改。');
-  if(id===project())pendingRaw=draftRaw;snapshot.aiExcerptExamplesAdded=true;snapshot.resourceSemanticVersion=1;return {snapshot,raw,projects};
+  if(id===project()){pendingRaw=draftRaw;startupCacheRaw=raw;}snapshot.aiExcerptExamplesAdded=true;snapshot.resourceSemanticVersion=1;return {snapshot,raw,projects};
  }
  function install(){
   installed=true;
   installSelection();
-  for(const type of ['pointerdown','keydown','paste','drop','click'])document.addEventListener(type,event=>{if(transactionBusy||protectedError){event.preventDefault();event.stopImmediatePropagation();}},true);
+  for(const type of ['pointerdown','keydown','paste','drop','click'])document.addEventListener(type,event=>{if((!initialized||transactionBusy||protectedError)&&!event.target?.closest?.('[data-mac-recovery-continue]')){event.preventDefault();event.stopImmediatePropagation();}},true);
   if(root.CuppaRelationStore){const original=root.CuppaRelationStore;root.CuppaRelationStore=Object.freeze({...original,commit:commitRelation});}
   persistCanvasSnapshot=function(next){
+   if(protectedError||cuppaBootstrap?.error)throw Error(protectedError||cuppaBootstrap.error);
+   if(!initialized||initializing)return JSON.stringify(next);
    if(protectedError||cuppaBootstrap?.error||transactionBusy||root.cuppaCaptureBusy||root.cuppaRelationBusy)throw Error(protectedError||cuppaBootstrap?.error||'本机提交正在完成，请稍候。');
    validateSnapshot(next);validateSnapshot(state);
    const prior=next._companionPersistence,current=state._companionPersistence;
@@ -346,5 +400,5 @@
   return Object.freeze({read:()=>run('read'),put:(token,input)=>run('put',token,input),remove:(token,id)=>run('remove',token,id),undoLast:token=>run('undoLast',token),canUndo:token=>engine.canUndo(token),subscribe:listener=>{listeners.add(listener);return ()=>listeners.delete(listener);},dispose:()=>{memoryListeners.delete(changed);legacy.dispose();},peek:()=>{if(!cache)throw Error('请先打开项目记忆。');return cache;}});
  }
 
- root.mouseCompanionMac=Object.freeze({beginSelectionGesture,completeSelectionGesture,importAttachment,commitCanvasCard,previewAttachment:(attachmentId,pageNumber)=>post('previewAttachment',{attachmentId,...(Number.isInteger(pageNumber)?{pageNumber}:{})}),dismissSelection:closeNativeSelection,openMaterial:id=>post('trayCommand',{command:'open',ids:[id]}),openExternal:url=>{const safe=webURL(url);if(safe)post('openURL',{url:safe});},alignSelection,createMemoryStore,commitCanvasHistory,receiveAgentResult,requestSmartTags,receiveSmartTagResult,commitSmartTags,boot,install,receiveSnapshot,ack,openAgent:agent,switchProject:targetProjectId=>post('switchProject',{targetProjectId}),createProject:name=>post('createProject',{name})});
+ root.mouseCompanionMac=Object.freeze({isReady:()=>initialized&&!initializing,beginSelectionGesture,completeSelectionGesture,importAttachment,commitCanvasCard,previewAttachment:(attachmentId,pageNumber)=>post('previewAttachment',{attachmentId,...(Number.isInteger(pageNumber)?{pageNumber}:{})}),dismissSelection:closeNativeSelection,openMaterial:id=>post('trayCommand',{command:'open',ids:[id]}),openExternal:url=>{const safe=webURL(url);if(safe)post('openURL',{url:safe});},alignSelection,createMemoryStore,commitCanvasHistory,receiveAgentResult,requestSmartTags,receiveSmartTagResult,commitSmartTags,boot,install,receiveSnapshot,ack,openAgent:agent,switchProject:targetProjectId=>post('switchProject',{targetProjectId}),createProject:name=>post('createProject',{name})});
 })(globalThis);

@@ -1,0 +1,14 @@
+const assert=require('node:assert/strict');
+const {startupChoice,canonical}=require('../Sources/MouseCompanion/CuppaCanvas/mac-native-bridge.js');
+const base={cards:[{id:'old',text:'original'}],drafts:{personal:{text:''},agent:{}},_companionPersistence:{version:1,revision:18}};
+const imported=structuredClone(base);imported.cards.push({id:'expanded',text:'new import'});
+const draft=structuredClone(base);draft.cards[0].text='later user edit';
+assert.equal(startupChoice(imported,null,null,'new'),'native');
+assert.equal(startupChoice(imported,base,null,'new'),'conflict','same revision is not ancestry');
+assert.equal(startupChoice(imported,draft,'old','new'),'conflict','divergent later edit is preserved, not guessed away');
+assert.equal(startupChoice(base,draft,'old','old'),'pending','proven base allows interrupted user save');
+assert.equal(startupChoice(base,JSON.parse(JSON.stringify(base)),null,'old'),'acknowledged','lost ack of exact native snapshot is harmless');
+const reordered={_companionPersistence:{revision:18,version:1},drafts:{agent:{},personal:{text:''}},cards:[{text:'original',id:'old'}]};
+assert.equal(canonical(base),canonical(reordered));assert.equal(startupChoice(base,reordered,null,'old'),'acknowledged');
+assert.equal(startupChoice(null,draft,null,'missing'),'pending');assert.equal(startupChoice(null,null,null,'missing'),'cache');
+console.log('PASS: startup uses full content/base identity, not revision ordering; native authority, lost ack, safe recovery and ambiguous conflict');

@@ -32,7 +32,17 @@ const changed=JSON.parse(JSON.stringify(h.env.state));changed.cards[0].title='Ed
 h.env.mouseCompanionMac.ack(save.requestId,{ok:true});assert.equal(h.statusNodes.get('mac-save-status')['data-status'],'saving','older ack cannot mark newer draft saved');h.env.mouseCompanionMac.ack(newer.requestId,{ok:false,message:'Native disk unavailable'});assert.equal(h.statusNodes.get('mac-save-status')['data-status'],'failed');assert.match(h.statusNodes.get('mac-save-status').textContent,/当前窗口/);assert.equal(h.env.mouseCompanionMac.boot('Project A').snapshot.cards[0].title,'Edited while saving','failed quota-backed draft remains in memory');
 h.env.persistCanvasSnapshot(changed);h.env.mouseCompanionMac.ack(h.messages.at(-1).requestId,{ok:true});assert.equal(h.statusNodes.get('mac-save-status')['data-status'],'saved');
 const authoritative=harness({...empty(),cards:[{id:'stale-cache'}]});assert.equal(authoritative.env.mouseCompanionMac.receiveSnapshot(snapshot).ok,true);assert.equal(authoritative.env.state.cards.some(c=>c.id==='stale-cache'),false,'native disk snapshot replaces ordinary stale cache');
-const recovery={...empty(),cards:[{id:'pending-edit'}]};const pending=harness(recovery,[['cuppa-mac-pending:Project A',JSON.stringify(recovery)]]);assert.equal(pending.env.mouseCompanionMac.receiveSnapshot(snapshot).ok,true);assert.ok(pending.env.state.cards.some(c=>c.id==='pending-edit'),'native snapshot does not discard pending draft');
+const recovery={...empty(),cards:[{id:'pending-edit'}]},recoveryRaw=JSON.stringify(recovery);
+const pending=harness(recovery,[['cuppa-mac-pending:Project A',recoveryRaw]]);
+assert.equal(pending.env.mouseCompanionMac.receiveSnapshot(snapshot).conflict,true);
+assert.equal(pending.env.state.cards.some(c=>c.id==='pending-edit'),false,'ambiguous draft must not replace authoritative native state');
+assert.equal(pending.storage.get('cuppa-mac-pending:Project A'),recoveryRaw,'conflicting draft remains byte-for-byte available');
+assert.equal(pending.messages.some(m=>m.action==='saveCanvas'),false,'conflicting startup cannot write any canvas');
+assert.equal(pending.messages.at(-1).action,'preserveCanvasRecovery');assert.equal(pending.messages.at(-1).pendingRaw,recoveryRaw);
+const descended=harness(recovery,[['cuppa-mac-pending:Project A',recoveryRaw],['cuppa-mac-pending-base:Project A','native-base']]);
+assert.equal(descended.env.mouseCompanionMac.receiveSnapshot({...snapshot,canvasToken:'native-base'}).ok,true);
+assert.ok(descended.env.state.cards.some(c=>c.id==='pending-edit'),'proven-base draft recovers without losing edits');
+
 const corrupt=harness();assert.equal(corrupt.env.mouseCompanionMac.receiveSnapshot({...snapshot,canvasSnapshot:{...empty(),_companionPersistence:{version:9,revision:1}}}).ok,false);assert.equal(corrupt.messages.some(m=>m.action==='saveCanvas'),false);assert.throws(()=>corrupt.env.persistCanvasSnapshot(empty()),/版本/);
 const invalid=harness(empty(),[['cuppa-mac-pending:Project A','not json']]);assert.throws(()=>invalid.env.mouseCompanionMac.boot('Project A'));assert.equal(invalid.storage.get('cuppa-mac-pending:Project A'),'not json');
 console.log('WeaviaLargeImageBridgeTests: synthetic 4.26MB pixels, quota, strict asset URLs, migration, provenance, pending ack/recovery, native authority and schema protection passed');

@@ -10,9 +10,13 @@
 /* Override the shared dialog's full-width input rule for this deliberate checkbox. */
 #relation-form .relation-confirm input[type=checkbox]{width:16px;height:16px;flex:0 0 16px;padding:0;margin:2px 0 0}#relation-form .relation-confirm span{flex:1;min-width:0}
 
-/* Types differ by pattern as well as hue; the text label remains authoritative.
+/* Types differ by pattern as well as hue; labels and details remain available at normal zoom.
    All assistant examples are pending, even when their type is informative. */
 .relation-edge{--relation-ink:#9c8eaf}.relation-kind-similar{--relation-ink:#7385b5}.relation-kind-different{--relation-ink:#b48a52}.relation-kind-complementary{--relation-ink:#588f89}.relation-kind-conflicting{--relation-ink:#b7667a}.relation-kind-custom{--relation-ink:#8b76b0}.relation-kind-rejected{--relation-ink:#92929a}
 .relation-edge .edge-visible,.relation-edge .relation-arrow{stroke:var(--relation-ink)}.relation-edge circle{fill:var(--relation-ink)}.relation-edge .relation-edge-label text{fill:var(--relation-ink)}
 .relation-kind-similar .edge-visible{stroke-dasharray:8 5}.relation-kind-different .edge-visible{stroke-dasharray:2 6}.relation-kind-complementary .edge-visible{stroke-dasharray:12 4 2 4}.relation-kind-conflicting .edge-visible{stroke-dasharray:9 3 2 3}.relation-kind-rejected .edge-visible{stroke-dasharray:3 7}
 .relation-edge .relation-arrow{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.relation-edge.confirmed .edge-visible{stroke-dasharray:none}.relation-edge:focus .edge-visible{stroke-width:3}
+
+/* Match the cards’ existing semantic-low threshold. Keep paths, hit targets,
+   titles and keyboard access intact while removing the entire overview pill. */
+.relation-edge.relation-edge-compact .relation-edge-label{display:none}

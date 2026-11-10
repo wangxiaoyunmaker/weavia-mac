@@ -31,6 +31,8 @@ final class MacWorkspaceCanvas: NSObject, WKNavigationDelegate, WKScriptMessageH
     private var destination = "projects"
     private let snapshots = MacCanvasSnapshotStore()
     private var resourceRoot: URL?
+    private var canvasSession = ""
+    private var writeToken: String?
     private var isReady = false
     private var loadedProject = ""
     private var observation: UUID?
@@ -107,6 +109,7 @@ final class MacWorkspaceCanvas: NSObject, WKNavigationDelegate, WKScriptMessageH
             attachmentHandler.project = context.project
             attachmentWindows.forEach { $0.close() }; attachmentWindows.removeAll()
             loadedProject = context.project; isReady = false; selectedCards = []
+            canvasSession = ""; writeToken = nil
             var parts = URLComponents(url: root.appendingPathComponent("index.html"), resolvingAgainstBaseURL: false)!
             parts.queryItems = [URLQueryItem(name: "project", value: context.project)]
             parts.fragment = destination
@@ -160,7 +163,15 @@ final class MacWorkspaceCanvas: NSObject, WKNavigationDelegate, WKScriptMessageH
             "selectionDelayMS": max(250, NSEvent.doubleClickInterval * 1000 + 30),
             "projects": context.projectNames.map { ["id": $0, "name": $0] }, "mode": mode,
             "materials": materials.map { Self.material($0, imageURL: assets.url(for: $0)) }, "storageStatus": context.storageStatus]
-        do { if let value = try snapshots.load(context.project) { payload["canvasSnapshot"] = value } }
+        payload["canvasSession"] = canvasSession
+        if let writeToken { payload["canvasToken"] = writeToken }
+        do {
+            let current = try snapshots.loadWithToken(context.project)
+            if let value = current.snapshot { payload["canvasSnapshot"] = value }
+            if current.token != writeToken {
+                payload["storageError"] = "本机画布已在其他位置变化，已停止覆盖。请重新打开项目后恢复。"
+            }
+        }
         catch { payload["storageError"] = error.localizedDescription }
         invoke("receiveSnapshot", payload)
     }
@@ -204,11 +215,44 @@ final class MacWorkspaceCanvas: NSObject, WKNavigationDelegate, WKScriptMessageH
             ack(id, ok: false, message: "项目已切换，请在当前项目重新操作。"); return
         }
         switch action {
-        case "ready": isReady = true; publish(); ack(id)
+        case "ready":
+            guard loadedProject == context.project,
+                  URLComponents(url: message.frameInfo.request.url!, resolvingAgainstBaseURL: false)?
+                    .queryItems?.first(where: { $0.name == "project" })?.value == context.project else {
+                ack(id, ok: false, message: "项目已切换，请重新打开画布。"); return
+            }
+            if !isReady {
+                canvasSession = UUID().uuidString
+                writeToken = try? snapshots.loadWithToken(context.project).token
+                isReady = true
+            }
+            publish(); ack(id)
+
         case "saveCanvas":
+            guard isReady, !canvasSession.isEmpty, body["canvasSession"] as? String == canvasSession,
+                  let expectedToken = writeToken else { ack(id, ok: false, message: "画布会话已失效，已停止覆盖。"); return }
             guard let snapshot = body["snapshot"] as? [String: Any] else { ack(id, ok: false, message: "画布格式无效"); return }
-            do { try snapshots.save(snapshot, project: context.project); ack(id, message: "画布已保存到本机", extra: ["revision": revision]) }
-            catch { ack(id, ok: false, message: error.localizedDescription) }
+            do {
+                let token = try snapshots.saveChecked(snapshot, project: context.project, expectedToken: expectedToken)
+                writeToken = token
+                ack(id, message: "画布已保存到本机", extra: ["revision": revision, "canvasToken": token])
+            } catch {
+                var extra: [String: Any] = [:]
+                if (error as NSError).domain == "MacCanvasStore", (error as NSError).code == 409 { extra["storageConflict"] = true }
+                if let recoveryID = (error as NSError).userInfo["recoveryID"] as? String { extra["recoveryID"] = recoveryID }
+                ack(id, ok: false, message: error.localizedDescription, extra: extra)
+            }
+        case "preserveCanvasRecovery":
+            guard isReady, !canvasSession.isEmpty, body["canvasSession"] as? String == canvasSession,
+                  let pendingRaw = body["pendingRaw"] as? String else {
+                ack(id, ok: false, message: "画布会话或待恢复内容无效，未归档。"); return
+            }
+            do {
+                let recoveryID = try snapshots.preserveRecovery(pendingRaw: pendingRaw,
+                    cachedRaw: body["cachedRaw"] as? String, baseCanvasToken: body["baseCanvasToken"] as? String,
+                    reason: body["reason"] as? String, project: context.project)
+                ack(id, extra: ["recoveryID": recoveryID])
+            } catch { ack(id, ok: false, message: error.localizedDescription) }
         case "importAttachment":
             guard let kind = body["kind"] as? String, ["image", "pdf"].contains(kind), !importingAttachment else { ack(id, ok: false, message: "请选择图片或 PDF，或先完成当前选择。"); return }
             endSelection(); importingAttachment = true
@@ -301,6 +345,9 @@ final class MacWorkspaceCanvas: NSObject, WKNavigationDelegate, WKScriptMessageH
         }
         attachmentWindows.removeAll { !$0.isVisible }; attachmentWindows.append(preview)
         preview.center(); preview.makeKeyAndOrderFront(nil)
+    }
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        isReady = false; canvasSession = ""; writeToken = nil
     }
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { /* ready is emitted after all canvas modules load. */ }
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {

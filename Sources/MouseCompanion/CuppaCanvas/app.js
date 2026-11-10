@@ -11,6 +11,8 @@ const sourceNames=['Google','Github','Pinterest','Reddit','本机文件'];
 const claimText='碎片化的灵感本是无序的雏形，各类文件承载着过往的经验与信息支撑，而Agent则作为衔接所有要素的核心载体，完成信息梳理、逻辑补全与高效推演。';
 const draft=()=>state.drafts[state.mode];
 function persistCanvasSnapshot(next){
+ // Native startup owns hydration. Module normalization is not a user edit.
+ if(globalThis.mouseCompanionMac&&!globalThis.mouseCompanionMac.isReady())return JSON.stringify(next);
  if(globalThis.cuppaCaptureBusy||globalThis.cuppaRelationBusy)throw Error('材料正在提交，请稍候');
  if(globalThis.cuppaBootstrap?.error)throw Error(globalThis.cuppaBootstrap.error);
  if(localStorage.getItem(canvasStorageKey)!==canvasPersistedToken)throw Error('画布已在别处更新，请重新打开后重试；未覆盖新数据。');

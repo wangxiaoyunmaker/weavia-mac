@@ -38,7 +38,13 @@ console.log('MacCanvasBridgeTests: lifecycle, native contracts, tray and persist
  let finished=false;const put=memory.put(current.token,{kind:'goal',text:'项目目标'}).then(value=>{finished=true;return value;});
  await new Promise(resolve=>setImmediate(resolve));assert.equal(finished,false,'memory success must wait for native disk acknowledgement');
  const memorySave=messages.at(-1);assert.equal(memorySave.action,'saveCanvas');assert.equal(memorySave.snapshot.macProjectMemory.entries[0].text,'项目目标');
- env.mouseCompanionMac.ack(memorySave.requestId,{ok:true});current=await put;assert.equal(current.document.entries.length,1);assert.equal(env.state.macProjectMemory.entries.length,1);
+ assert.equal(env.mouseCompanionMac.receiveSnapshot({...snapshot,canvasToken:'older-published-token'}).pending,true,'native publication waits during acknowledged transaction');
+ env.mouseCompanionMac.ack(memorySave.requestId,{ok:true,canvasToken:'acknowledged-memory-token'});current=await put;assert.equal(current.document.entries.length,1);assert.equal(env.state.macProjectMemory.entries.length,1);
+ await new Promise(resolve=>setTimeout(resolve,10));
+ env.state.drafts.personal.text='Later user draft';env.persistCanvasSnapshot(env.state);
+ assert.equal(storage.get('cuppa-mac-pending-base:Project A'),'acknowledged-memory-token','queued older publication cannot regress the next pending draft ancestry');
+ env.mouseCompanionMac.ack(messages.at(-1).requestId,{ok:true,canvasToken:'later-user-token'});
+
  env.state.connections=[];const edge={id:'edge',from:'native:native-id',to:'native:pending'};
  const relation=env.CuppaRelationStore.commit('Project A',env.state,env.canvasPersistedToken,null,edge,0);await new Promise(resolve=>setImmediate(resolve));assert.equal(messages.at(-1).snapshot.connections[0].id,'edge');env.mouseCompanionMac.ack(messages.at(-1).requestId,{ok:true});await relation;assert.equal(env.state.connections.length,1);
  storage.set('cuppa-mac-pending:Recovery',JSON.stringify({...empty,cards:[{id:'recovery'}]}));assert.equal(env.mouseCompanionMac.boot('Recovery').snapshot.cards[0].id,'recovery');
