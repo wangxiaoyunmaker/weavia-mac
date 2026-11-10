@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="设计师多源信息探索工作台交互原型"><title>WEAVIA · 设计探索工作台</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="ai-conversations.css"><link rel="stylesheet" href="project-desktop.css"><link rel="stylesheet" href="project-memory.css"><link rel="stylesheet" href="design-objects.css"><link rel="stylesheet" href="idea-provenance.css"><link rel="stylesheet" href="card-relations.css"><link rel="stylesheet" href="companion-observer.css"><link rel="stylesheet" href="visual-theme.css"><link rel="stylesheet" href="canvas-toolkit.css"><link rel="stylesheet" href="tray-inbox.css"><link rel="stylesheet" href="tray-image-assets.css"><link rel="stylesheet" href="card-details.css"><link rel="stylesheet" href="smart-tags.css"></head>
+<body>
+<svg class="sprite" xmlns="http://www.w3.org/2000/svg"><defs>
+<symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+<symbol id="arrow" viewBox="0 0 24 24"><path d="M12 19V5m-6 6 6-6 6 6"/></symbol>
+</defs></svg>
+<section id="project-desktop" class="project-desktop" aria-label="项目空间桌面">
+  <header class="desktop-clock">
+    <time id="desktop-time"></time>
+    <p id="desktop-date"></p>
+  </header>
+  <div class="project-grid" aria-label="示例项目预览">
+    <article class="orbit-project orbit-dan">
+      <img src="assets/project-desktop/dan-x.jpg" alt=""><h2>交互设计</h2>
+    </article>
+    <article class="orbit-project orbit-guide">
+      <svg viewBox="0 0 160 160" aria-hidden="true"><rect x="31" y="24" width="96" height="107" rx="9" fill="#f3f6ee"/><rect x="43" y="38" width="32" height="11" rx="4" fill="#315955"/><path d="M43 62h70M43 73h54M43 84h65" stroke="#afc6ba" stroke-width="3" stroke-linecap="round"/><rect x="43" y="96" width="27" height="19" rx="4" fill="#b8d8cc"/><rect x="76" y="96" width="37" height="19" rx="4" fill="#dce9d5"/></svg><h2>UX 设计指南</h2>
+    </article>
+    <article class="orbit-project orbit-visual">
+      <svg viewBox="0 0 160 160" aria-hidden="true"><circle cx="61" cy="66" r="42" fill="#f6a7bc"/><circle cx="100" cy="89" r="40" fill="#8b9bf1" opacity=".9"/><path d="M25 124 126 25" stroke="#fff" stroke-width="1" opacity=".7"/><circle cx="81" cy="77" r="25" fill="none" stroke="#fff" opacity=".75"/></svg><h2>人机交互技术...</h2>
+    </article>
+    <article class="orbit-project orbit-harmony">
+      <img src="assets/harmonyos-hero.jpg" alt=""><h2>HarmonyOS 体验</h2>
+    </article>
+    <article class="orbit-project orbit-research">
+      <svg viewBox="0 0 160 160" aria-hidden="true"><path d="M26 115V38M26 115h111" stroke="#6b5668" stroke-width="2" opacity=".45"/><path d="M34 100l25-29 20 10 22-28 26-15" fill="none" stroke="#fff8ee" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><g fill="#725a76"><circle cx="59" cy="71" r="5"/><circle cx="101" cy="53" r="5"/><circle cx="127" cy="38" r="5"/></g></svg><h2>竞品研究</h2>
+    </article>
+    <article class="orbit-project orbit-spatial">
+      <svg viewBox="0 0 160 160" aria-hidden="true"><path d="m80 26 54 29v52l-54 29-54-29V55zM26 55l54 29 54-29M80 84v52" fill="none" stroke="#b9e0f4" stroke-width="2"/><path d="m80 42 38 21v36l-38 21-38-21V63z" fill="#8ebbe2" opacity=".4"/><circle cx="80" cy="84" r="9" fill="#eaf9ff"/></svg><h2>空间交互</h2>
+    </article>
+    <button id="create-project" class="project-new" type="button" aria-label="新建项目空间画布" title="新建项目空间画布">
+      <span aria-hidden="true">＋</span>
+    </button>
+    <article class="orbit-project orbit-product">
+      <svg viewBox="0 0 160 160" aria-hidden="true"><rect x="51" y="22" width="58" height="108" rx="13" fill="#e8f5f3"/><rect x="58" y="32" width="44" height="66" rx="6" fill="#b1d9d5"/><circle cx="80" cy="65" r="16" fill="none" stroke="#f9fffe" stroke-width="2"/><path d="M71 114h18" stroke="#77aaa5" stroke-width="3" stroke-linecap="round"/></svg><h2>产品原型</h2>
+    </article>
+  </div>
+  <button id="open-cuppa" class="featured-project" type="button" aria-label="进入 CUPPA 项目画布">
+    <img src="assets/project-desktop/cuppa.jpg" alt="">
+    <span class="featured-project-caption">
+      <strong>CUPPA</strong>
+      <span>示例方向：比较直接与间接的交互形式</span>
+      <small>原型示例项目 · 点击继续画布</small>
+    </span>
+  </button>
+  <div class="desktop-profile">
+    <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="17" r="8"/><path d="M8 38c2-7 8-11 16-11s14 4 16 11c-4 4-10 7-16 7S12 42 8 38Z"/></svg>
+    <span>本机工作空间</span>
+  </div>
+  <button id="open-traditional-desktop" class="desktop-exit" type="button" aria-label="切换到传统桌面" title="切换到传统桌面">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5m3-12 4 4-4 4m-5-4h12"/></svg>
+  </button>
+</section>
+<section id="traditional-desktop" class="traditional-desktop" aria-label="传统桌面，按 Esc 返回项目空间桌面" tabindex="-1" hidden>
+  <img src="assets/project-desktop/pc-desktop.png" alt="传统 PC 桌面" draggable="false">
+</section>
+<dialog id="project-create-dialog" aria-labelledby="project-create-title">
+  <header><h2 id="project-create-title">新建项目空间画布</h2><button id="close-project-create" type="button" aria-label="关闭">×</button></header>
+  <form class="project-create-form">
+    <label>项目名称<input name="name" required maxlength="40" placeholder="输入项目名称"></label>
+    <button class="primary" type="submit">新建并进入</button>
+    <span class="project-create-error" role="alert"></span>
+  </form>
+  <div class="project-create-list"></div>
+</dialog>
+<main id="workspace" tabindex="-1" hidden aria-label="项目画布">
+ <div id="region-layer"></div><svg id="connection-layer" aria-label="卡片连线"></svg><div id="world"></div><div id="port-layer"></div><div id="marquee-frame" hidden aria-hidden="true"></div><section id="selection-actions" hidden aria-label="选区操作"><header class="selection-header"><div class="selection-heading"><img src="assets/pdf-icons/agent.png" alt="" aria-hidden="true"><strong>下一步</strong></div><button id="selection-close" aria-label="关闭下一步建议" title="关闭">×</button></header><div id="selection-count" class="selection-sr-only" aria-live="polite"></div><div class="selection-content"><button id="selection-details"><span class="selection-text-glyph" aria-hidden="true">▤</span>查看详情</button><button id="selection-analyze"><img class="selection-action-icon" src="assets/pdf-icons/sidebar.svg" alt="" aria-hidden="true">分别单独分析</button><button id="selection-similar"><img class="selection-action-icon" src="assets/pdf-icons/canvas-search.svg" alt="" aria-hidden="true">寻找相似案例</button><button id="selection-custom-toggle" aria-expanded="false"><span class="selection-text-glyph" aria-hidden="true">Aa</span>自定义输入</button><form id="selection-custom-form" hidden><input id="selection-custom-input" aria-label="针对所选卡片输入任务" placeholder="输入你想做的事" autocomplete="off" required><button type="submit" aria-label="提交任务">↑</button></form></div></section><div id="canvas-action-hint" hidden></div>
+ <aside id="sidebar">
+  <header class="project"><button class="icon" id="projects" aria-label="返回项目桌面" title="返回项目桌面"><img class="pdf-icon pdf-back" src="assets/pdf-icons/back.svg" alt="" aria-hidden="true"></button><span data-project-name>CUPPA</span><button class="icon settings-entry" id="open-settings" data-open-settings aria-label="设置" title="设置：工作模式与 API" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.6 2.1-2 .9-1.9-.5L2 9.5 3.5 11v2L2 14.5l2.5 4 1.9-.5 2 .9L9 21h6l.6-2.1 2-.9 1.9.5 2.5-4-1.5-1.5v-2L22 9.5l-2.5-4-1.9.5-2-.9L15 3Z"/><circle cx="12" cy="12" r="3"/></svg></button><button class="icon" id="collapse" aria-label="收起侧栏" title="收起侧栏"><img class="pdf-icon pdf-panel" src="assets/pdf-icons/sidebar.svg" alt="" aria-hidden="true"></button></header>
+  <nav class="tabs" aria-label="侧栏视图"><button class="active" data-tab="timeline">Timeline</button><button data-tab="overview">Overview</button></nav>
+  <div id="side-content"></div>
+  <button id="open-card-relations" class="project-memory-launch" type="button" aria-haspopup="dialog"><span>卡片关系</span><small id="relation-count">手动标注</small></button>
+  <button id="open-project-memory" class="project-memory-launch" type="button" aria-haspopup="dialog" aria-controls="memory-dialog"><span>项目记忆</span><small id="memory-count">手动管理</small></button>
+  <div class="side-bottom"><form id="canvas-search-form"><button id="find-canvas" type="submit" aria-label="搜索画布内容"><img class="pdf-icon pdf-search" src="assets/pdf-icons/canvas-search.svg" alt=""></button><input id="canvas-search-input" placeholder="搜索画布内容" aria-label="搜索画布内容" autocomplete="off"></form></div>
+ </aside>
+ <div id="collapsed-project" class="floating collapsed-project" role="group" aria-label="项目导航" hidden><button id="projects-collapsed" class="icon" aria-label="返回项目桌面" title="返回项目桌面"><img class="pdf-icon pdf-back" src="assets/pdf-icons/back.svg" alt="" aria-hidden="true"></button><span class="collapsed-project-title" data-project-name title="CUPPA">CUPPA</span><button class="icon settings-entry" id="open-settings-collapsed" data-open-settings aria-label="设置" title="设置：工作模式与 API" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-.6 2.1-2 .9-1.9-.5L2 9.5 3.5 11v2L2 14.5l2.5 4 1.9-.5 2 .9L9 21h6l.6-2.1 2-.9 1.9.5 2.5-4-1.5-1.5v-2L22 9.5l-2.5-4-1.9.5-2-.9L15 3Z"/><circle cx="12" cy="12" r="3"/></svg></button><button id="expand" class="icon" aria-label="展开侧栏" title="展开侧栏" aria-controls="sidebar" aria-expanded="false"><img class="pdf-icon pdf-panel" src="assets/pdf-icons/sidebar.svg" alt="" aria-hidden="true"></button></div>
+ <div class="top-controls">
+  <section id="search-shell" class="floating">
+   <form id="search-form" autocomplete="off"><button type="button" id="attach" class="icon" aria-label="取用画布内容" title="从画布提取文字"><img class="pdf-icon pdf-clip" src="assets/pdf-icons/paperclip.svg" alt="" aria-hidden="true"></button><input id="query" placeholder="搜索内容" aria-label="搜索内容"><button type="button" class="icon" id="voice" title="语音输入" aria-label="语音输入"><img class="pdf-icon pdf-mic" src="assets/pdf-icons/microphone.png" alt="" aria-hidden="true"></button><button type="submit" id="submit" class="icon" title="提交搜索" aria-label="提交搜索" hidden><svg><use href="#arrow"/></svg></button></form>
+   <div id="references" hidden></div>
+   <div id="source-panel" hidden><div id="agent-scope" hidden><span>搜索范围 · 可多选</span><button id="clear-sources">清空</button></div><div id="sources"></div><div id="scope-footer" hidden></div></div>
+  </section>
+  <section id="work-mode-switch" class="floating" aria-label="工作模式" aria-busy="true" title="连接鸿蒙工作模式中">
+   <div class="work-mode-options mode-switch" role="group" aria-label="专注或共创">
+    <button type="button" class="mode" data-mode="personal" data-work-mode="focus" aria-pressed="false" aria-label="专注模式" disabled title="专注：单平台搜索，不主动生成建议"><img class="pdf-person" src="assets/pdf-icons/personal.svg" alt="" aria-hidden="true"></button>
+    <button type="button" class="mode" data-mode="agent" data-work-mode="cocreate" aria-pressed="false" aria-label="共创模式" disabled title="共创：多来源搜索，允许待采纳建议"><img class="pdf-agent" src="assets/pdf-icons/agent.png" alt="" aria-hidden="true"></button>
+   </div>
+   <p id="work-mode-status" role="status" aria-live="polite" hidden></p>
+  </section>
+ </div>
+  <div id="canvas-toolbar" class="toolbar floating" role="toolbar" aria-label="画布工具" aria-orientation="vertical"><button class="icon active" id="select-tool" title="选择 V" aria-label="选择工具" aria-pressed="true"><img class="pdf-icon pdf-pointer" src="assets/pdf-icons/select.svg" alt="" aria-hidden="true"></button><button class="icon" id="hand-tool" title="移动 H" aria-label="移动工具" aria-pressed="false"><img class="pdf-icon pdf-hand" src="assets/pdf-icons/hand.svg" alt="" aria-hidden="true"></button><button class="icon" id="add-tool" title="创建" aria-label="打开创建菜单" aria-haspopup="true" aria-expanded="false" aria-controls="more-menu add-menu"><img class="pdf-icon pdf-plus" src="assets/pdf-icons/add.png" alt="" aria-hidden="true"></button><div class="menu" id="add-menu" hidden aria-label="创建卡片"><button id="back-create-menu" class="create-menu-back">‹ 返回创建菜单</button><button data-add="source">创建资源卡片</button><button data-add="claim">创建想法卡片</button><button data-add="design">创建设计对象卡片</button></div><div class="menu" id="more-menu" hidden><button id="create-card">创建卡片 <span>›</span></button><button id="create-region">创建区域 <span>▱</span></button><button id="create-connection">创建连线 <span>↗</span></button></div></div>
+ <div class="zoom floating"><button id="zoom-out" aria-label="缩小">−</button><button id="zoom-reset" title="重置为 100%">100%</button><button id="zoom-in" aria-label="放大">+</button></div>
+ <div id="pick-bar" class="floating" hidden><span>选择画布卡片以取用内容</span><button id="cancel-pick">取消</button></div>
+ <section id="result-panel" class="floating" hidden aria-label="搜索面板"></section>
+ <div id="toast" role="status" aria-live="polite"></div>
+ <dialog id="dialog"><header><strong id="dialog-title"></strong><button class="icon" id="dialog-close" aria-label="关闭"><svg><use href="#close"/></svg></button></header><div id="dialog-body"></div></dialog>
+ <dialog id="canvas-search-dialog" aria-label="搜索画布内容"><form id="canvas-search-modal-form"><img class="search-magnifier" src="assets/pdf-icons/canvas-search.svg" alt=""><input id="canvas-search-query" aria-label="搜索关键词" placeholder="搜索画布内容" autocomplete="off"><select id="canvas-search-type" aria-label="内容类型"><option value="all">全部</option><option value="source">资源卡片</option><option value="claim">想法卡片</option><option value="design">设计对象</option></select><button type="button" id="close-canvas-search" aria-label="关闭搜索">×</button></form><p id="canvas-search-count" role="status"></p><div id="canvas-search-results"></div></dialog>
+ <input id="file-input" type="file" multiple hidden>
+</main><dialog id="memory-dialog" aria-labelledby="memory-title" aria-describedby="memory-summary">
+ <header><h2 id="memory-title">项目记忆</h2><button id="memory-close" class="icon" type="button" aria-label="关闭项目记忆">×</button></header>
+ <p class="memory-caption"><strong id="memory-project-name"></strong> · 本机私有，仅此项目<br>由你明确添加和确认。AI 建议、卡片和普通操作不会自动变成记忆。</p>
+ <div id="memory-summary"></div><div id="memory-list"></div>
+ <div id="memory-toolbar"><button id="memory-add" class="primary" type="button">新增记忆</button><button id="memory-undo" type="button" disabled>撤销上次修改</button><button id="memory-reload" type="button">重新读取</button></div>
+ <form id="memory-form" hidden>
+  <h3 id="memory-editor-title">新增记忆</h3>
+  <label for="memory-kind">类型<select id="memory-kind"><option value="goal">项目目标</option><option value="constraint">已确认条件</option><option value="question">待探索问题</option></select></label>
+  <p id="memory-kind-hint" class="memory-hint"></p>
+  <label for="memory-text">内容<textarea id="memory-text" maxlength="1000" required placeholder="填写你希望当前项目记住的内容"></textarea></label>
+  <label id="memory-confirm-row" hidden><input id="memory-confirm" type="checkbox"><span>我确认这条条件或判断，可作为当前项目的已确认依据。</span></label>
+  <div class="memory-actions"><button id="memory-save" class="primary" type="submit" disabled>保存记忆</button><button id="memory-cancel" type="button">取消编辑</button><span id="memory-counter" class="memory-counter"></span></div>
+ </form>
+ <div id="memory-discard" hidden role="alert">还有未保存的修改，是否放弃？<div class="memory-actions"><button id="memory-keep-editing" type="button">继续编辑</button><button id="memory-discard-edit" type="button">放弃修改</button></div></div>
+ <p id="memory-status" role="status" aria-live="polite"></p>
+</dialog><script data-cuppa-src="card-details.js"></script><script data-cuppa-src="resources.js"></script><script data-cuppa-src="canvas-interactions.js"></script><script data-cuppa-src="selection.js"></script><script data-cuppa-src="idea-provenance.js"></script><script data-cuppa-src="idea-provenance-ui.js"></script><script data-cuppa-src="claims.js"></script><script data-cuppa-src="search-materials.js"></script><script data-cuppa-src="smart-tags.js"></script><script data-cuppa-src="smart-tags-ui.js"></script><script data-cuppa-src="tags.js"></script><script data-cuppa-src="ai-conversations.js"></script><script data-cuppa-src="ai-examples.js"></script><script data-cuppa-src="drag-controller.js"></script><script data-cuppa-src="design-objects.js"></script><script data-cuppa-src="card-relations.js"></script><script data-cuppa-src="card-relations-ui.js"></script><script data-cuppa-src="app.js"></script><script data-cuppa-src="project-desktop.js"></script><script data-cuppa-src="project-memory-store.js"></script><script data-cuppa-src="project-memory-durable.js"></script><script data-cuppa-src="project-memory.js"></script><script data-cuppa-src="capture-import.js"></script><script data-cuppa-src="tray-inbox.js"></script><script data-cuppa-src="embedded-search.js"></script><script data-cuppa-src="companion-rules.js"></script><script data-cuppa-src="companion-observer.js"></script><script data-cuppa-src="canvas-toolkit.js"></script><script data-cuppa-src="work-mode.js"></script><script data-cuppa-src="canvas-history.js"></script><script data-cuppa-src="canvas-history-ui.js"></script><script src="tray-image-assets.js"></script><script src="capture-store.js"></script><script src="card-relations-store.js"></script><script src="mac-native-bridge.js"></script><script src="capture-bootstrap.js"></script></body></html>

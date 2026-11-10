@@ -1,0 +1,33 @@
+/* Fixed canvas utility, with solid content and shared presentation tokens. */
+#tray-inbox{position:absolute;right:20px;top:110px;width:300px;max-width:calc(100% - 40px);z-index:24;color:var(--ui-ink,#27303f);background:var(--ui-glass,rgba(255,255,255,.9));border:1px solid var(--ui-line,#dfe4eb);border-radius:14px;box-shadow:var(--ui-shadow);backdrop-filter:blur(14px);font-size:12px;overscroll-behavior:contain}
+#tray-inbox button{font:inherit;cursor:pointer;border:1px solid var(--ui-line,#dfe4eb);border-radius:8px;background:var(--ui-surface,#fafbfd);color:inherit;min-height:32px;padding:5px 9px}
+#tray-inbox button:disabled{cursor:default;opacity:.5}
+#tray-inbox button:active:not(:disabled){background:var(--ui-soft,#f1f4f8)}
+#tray-inbox button:focus-visible,#tray-inbox input:focus-visible{outline:2px solid var(--ui-primary,#2563eb);outline-offset:2px}
+#tray-inbox #tray-inbox-toggle{width:100%;text-align:left;border:0;background:transparent;padding:10px 12px;font-weight:600}
+#tray-inbox-count{font-variant-numeric:tabular-nums;color:var(--ui-muted,#657184);margin-left:6px}
+#tray-inbox-body{padding:0 12px 10px}
+#tray-inbox [hidden],.tray-inbox-ghost[hidden]{display:none!important}
+.tray-inbox-help,#tray-inbox-status{color:var(--ui-muted,#657184);font-size:12px;line-height:1.55;margin:0 0 10px}
+.tray-inbox-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.tray-inbox-actions label{display:flex;align-items:center;gap:5px}
+#tray-inbox #tray-inbox-save{background:var(--ui-primary,#2563eb);color:white;border-color:transparent}
+#tray-inbox #tray-inbox-save:hover:not(:disabled){background:var(--ui-primary-hover,#1d4ed8)}
+#tray-inbox-list{max-height:min(48vh,440px);overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:2px}
+.tray-inbox-item{background:#fff;border:1px solid var(--ui-line,#dfe4eb);border-radius:9px;padding:9px;margin-bottom:8px;overflow-wrap:anywhere}
+.tray-inbox-item header{display:flex;align-items:flex-start;gap:6px}
+.tray-inbox-item label{display:flex;align-items:flex-start;gap:6px;flex:1;min-width:0;line-height:1.5}
+.tray-inbox-item input{flex:none;margin-top:3px;accent-color:var(--ui-primary,#2563eb)}
+.tray-inbox-item strong{font-size:12px;font-weight:600}
+#tray-inbox [data-tray-drag]{font-size:20px;padding:0 7px;touch-action:none;user-select:none;cursor:grab;flex:none}
+.tray-inbox-preview{white-space:pre-wrap;line-height:1.55;margin:8px 0;color:var(--ui-ink,#27303f);max-height:110px;overflow:auto;overscroll-behavior:contain}
+.tray-inbox-item small{font-size:11px;line-height:1.5;color:var(--ui-muted,#657184)}
+#tray-inbox footer{padding-top:8px}#tray-inbox-status{margin:8px 0 0}
+.tray-inbox-ghost{position:fixed;z-index:10000;pointer-events:none;background:var(--ui-surface,#fafbfd);color:var(--ui-ink,#27303f);border:1px solid var(--ui-primary,#2563eb);border-radius:8px;padding:8px 10px;font-size:12px}
+#tray-inbox.tray-inbox-dragging,body.dragging #tray-inbox{background:var(--ui-surface,#fafbfd);backdrop-filter:none}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){#tray-inbox{background:var(--ui-surface,#fafbfd);backdrop-filter:none}}
+@media(prefers-contrast:more){#tray-inbox,#tray-inbox .tray-inbox-item,#tray-inbox button{border-color:#657184}}
+@media(max-width:650px){#tray-inbox{right:12px;top:104px;width:260px}#tray-inbox-list{max-height:35vh}}
+
+/* A collapsed utility is a compact edge affordance, not an empty 300px overlay. */
+#tray-inbox.tray-inbox-collapsed{top:auto;bottom:84px;width:auto;max-width:180px}

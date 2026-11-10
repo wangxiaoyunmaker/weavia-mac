@@ -1,0 +1,19 @@
+# Local and generated data
+.build/
+*.app/
+verification/
+baseline/
+label-reference/
+coffee-*/
+BrandAssets/WEAVIA.iconset/
+BrandAssets/WEAVIA.icns
+.DS_Store
+.env*
+*.log
+*.zip
+*.dmg
+*.p12
+*.pfx
+*.pem
+*.key
+*.sqlite*

@@ -1,0 +1,29 @@
+/* Kept separate from the teammate's canvas styling. */
+.project-memory-launch{margin:0 15px 8px;padding:10px 8px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-radius:10px;background:#f3f1fb;color:#6553a4;flex-shrink:0;text-align:left}
+.project-memory-launch small{font-size:10px;color:#8a80a6}
+#memory-dialog{width:min(700px,calc(100vw - 32px));max-width:none;max-height:90dvh;padding:24px;border-radius:22px;overflow:auto;color:#333}
+#memory-dialog h2{margin:0;font-size:18px;font-weight:600}
+#memory-dialog header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.memory-caption,.memory-hint{color:#777581;font-size:12px;line-height:1.7}
+.memory-caption{margin:8px 0 14px}.memory-caption strong{color:#66528e;font-size:12px;font-weight:500}
+#memory-summary{padding:11px 14px;background:#f6f5fa;border-radius:12px;font-size:12px;color:#6d647c;line-height:1.6}
+.memory-section{margin-top:18px}.memory-section h3{font-size:13px;margin:0 0 8px;color:#67616e;font-weight:500}
+.memory-empty{font-size:12px;color:#96919c;padding:8px 0;margin:0}
+.memory-item{padding:12px 14px;border:1px solid #eeecf2;border-radius:12px;margin-bottom:8px;background:#fff}
+.memory-item p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;margin:0 0 8px;font-size:13px;color:#3b3742}
+.memory-item footer{display:flex;align-items:center;flex-wrap:wrap;gap:6px}.memory-item small{color:#96909c;font-size:10px;margin-right:auto}
+.memory-item button,#memory-toolbar button,.memory-actions button{padding:7px 10px;border-radius:8px;border:1px solid #e9e5ef;font-size:12px}
+#memory-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:20px;padding-top:16px;border-top:1px solid #f0edf4}
+#memory-dialog .primary{background:#7057a6;color:#fff;border-color:#7057a6}#memory-dialog button:disabled{cursor:default;opacity:.45}
+#memory-form{margin-top:20px;border-top:1px solid #eee9f5;padding-top:16px}#memory-editor-title{font-size:14px;margin:0 0 12px}
+#memory-form label{display:block;font-size:12px;color:#6a6372;margin:10px 0}
+#memory-kind,#memory-text{display:block;width:100%;margin-top:7px;border:1px solid #e4dfeb;border-radius:10px;background:#faf9fc;color:#34303c;padding:10px;font:inherit}
+#memory-text{min-height:110px;resize:vertical;font-size:13px;line-height:1.6}
+#memory-dialog :is(input,textarea,select):focus-visible{outline:2px solid #9b83c4;outline-offset:2px}
+#memory-confirm-row{display:flex;align-items:flex-start;gap:8px;line-height:1.7}#memory-confirm{margin-top:4px;flex-shrink:0;accent-color:#7057a6}
+.memory-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.memory-counter{margin-left:auto;font-size:11px;color:#9a939f}
+#memory-status{white-space:pre-wrap;font-size:12px;line-height:1.6;color:#76678d;min-height:20px;margin:12px 0 0}#memory-status[data-error="true"]{color:#ad4141}
+#memory-discard{padding:12px;background:#fff5e7;border-radius:10px;margin-top:12px;font-size:12px;line-height:1.7}
+#memory-discard .memory-actions{margin-top:8px}
+@media(max-width:500px){#memory-dialog{padding:18px}.memory-item footer{gap:5px}.memory-item small{flex-basis:100%}}
+@media(prefers-reduced-motion:no-preference){#memory-dialog[open]{animation:memory-appear .16s ease-out}@keyframes memory-appear{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}}

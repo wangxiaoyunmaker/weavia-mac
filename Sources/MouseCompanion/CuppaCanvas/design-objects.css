@@ -1,0 +1,22 @@
+/* Match the teammate canvas's quiet cards and lavender design-object identity. */
+#world .design-object-card{width:288px;background:#fdfcff;border-color:#e4dff0}
+.design-object-card header{padding:11px 14px;color:#89799f;background:#f5f1fa;border-color:#ece6f3}
+.design-object-heading{padding:15px 15px 0}.design-app{display:inline-block;max-width:100%;overflow-wrap:anywhere;color:#81728f;font-size:10px;line-height:1.5}
+.design-object-card .design-object-heading h3{margin:6px 0 13px;color:#383140;font-size:15px;line-height:1.5;font-weight:500;overflow-wrap:anywhere}
+.design-location{padding:0 15px 12px;font-size:11px;color:#6e6578}.design-location>span{font-size:9px;color:#aaa0b5}.design-location p{margin:5px 0 0;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.design-object-card .body{min-height:0;max-height:220px;overflow:auto;padding-bottom:12px;font-size:11px;line-height:1.7;overflow-wrap:anywhere;color:#827b89}
+.design-link-label{margin:0;padding:0 15px 13px;font-size:9px;color:#9b92a6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.design-object-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-top:1px solid #eee9f5;background:#faf8fc}.design-object-actions a{color:#75608f;text-decoration:none;font-size:11px;border-radius:6px;padding:6px}.design-object-actions a:hover{background:#eee7f7}.design-object-actions button{font-size:10px;color:#93869f;padding:6px;border-radius:6px}.design-unlinked{font-size:10px;color:#aaa0b5;padding:6px}
+.design-object-card.compact .design-object-details,.design-object-card.compact .design-reference-tags{display:none}.design-object-card.compact .design-object-heading h3{font-size:22px;margin-bottom:15px}
+#dialog.design-editor-dialog{width:min(540px,calc(100vw - 32px));max-height:calc(100dvh - 40px);overflow:auto;border-radius:20px;padding:22px;background:#fff}
+#design-object-form .design-editor-intro{font-size:11px;line-height:1.7;color:#91879b;margin:6px 0 18px}#design-object-form label{display:block;font-size:11px;color:#61566d;margin:13px 0 0}#design-object-form label>span{color:#aaa1b2;font-size:10px;margin-left:4px}
+#design-object-form input,#design-object-form textarea{display:block;width:100%;margin-top:7px;border:1px solid #e9e4ed;background:#fcfbfd;border-radius:9px;padding:11px;color:#443a50;font-size:12px;min-width:0}#design-object-form input:focus,#design-object-form textarea:focus{border-color:#a48bc0;box-shadow:0 0 0 2px #eee7f6}#design-object-form input::placeholder,#design-object-form textarea::placeholder{color:#b1a7bd}
+.design-editor-row{display:grid;grid-template-columns:1fr 1.25fr;gap:14px}#design-object-form textarea{height:96px;resize:vertical;line-height:1.6}.design-field-hint{font-size:10px;line-height:1.7;color:#a096ab;margin:8px 0}.design-form-actions{display:flex;gap:12px;align-items:center;margin-top:15px}.design-form-actions>button{border-radius:9px;padding:10px 15px}.design-form-actions .primary{background:#826998;color:white}.design-form-actions .primary:disabled{opacity:.5;cursor:default}
+#design-error{color:#ab5067;font-size:11px;line-height:1.6;margin:10px 0 0}#design-discard{padding:12px;background:#f8f4fb;border-radius:10px;margin-top:12px;font-size:11px;color:#786685}#design-discard p{margin:0 0 8px}#design-discard button{padding:7px 10px;border-radius:6px}#design-drop{color:#a25269}
+@media(max-width:520px){.design-editor-row{grid-template-columns:1fr;gap:0}#dialog.design-editor-dialog{padding:16px}}
+/* Keep each card's raised drag handle inside its own stacking context. */
+#world>.card{isolation:isolate}
+#world .design-object-card{overflow:visible}
+.design-object-card header{border-radius:13px 13px 0 0}
+.design-object-card header>span{pointer-events:none}
+.design-object-card .design-object-actions{border-radius:0 0 13px 13px}
