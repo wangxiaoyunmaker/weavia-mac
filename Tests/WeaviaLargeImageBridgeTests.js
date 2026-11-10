@@ -41,7 +41,7 @@ console.log('WeaviaLargeImageBridgeTests: synthetic 4.26MB pixels, quota, strict
  const q=harness();q.env.mouseCompanionMac.receiveSnapshot(snapshot);q.env.mouseCompanionMac.ack(q.messages.at(-1).requestId,{ok:true});
  const edge={id:'quota-edge',from:'a',to:'b'};let completed=false;
  const relation=q.env.CuppaRelationStore.commit('Project A',q.env.state,q.env.canvasPersistedToken,null,edge,0).then(value=>{completed=true;return value;});
- await new Promise(resolve=>setImmediate(resolve));assert.equal(completed,false);assert.equal(q.env.state.connections,undefined);
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(completed,false);assert.equal(JSON.stringify(q.env.state.connections),'[]','hydrated empty graph must remain empty until native ack');
  q.env.mouseCompanionMac.ack(q.messages.at(-1).requestId,{ok:true});await relation;assert.equal(q.env.state.connections[0].id,'quota-edge');
  vm.runInContext(fs.readFileSync(require.resolve('../Sources/MouseCompanion/CuppaCanvas/project-memory-store.js'),'utf8'),q.env);
  q.env.createDurableProjectMemoryStore=()=>({read:async()=>({document:{version:1,projectId:'Project A',revision:0,entries:[]},token:null}),dispose:()=>{}});

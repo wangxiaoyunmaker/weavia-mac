@@ -197,22 +197,22 @@ body.dragging :is(.floating,#sidebar,#tag-quick-tools,#tag-popover) {background:
 .settings-entry:active:not(:disabled) {background:var(--ui-soft);box-shadow:inset 0 0 0 1px #27303f24}
 #collapsed-project .settings-entry {width:28px;height:32px}
 
-/* Project identity gets its own flexible row; native actions never squeeze its text. */
-#workspace {--sidebar-edge:274px;--canvas-search-inset:286px}
-#sidebar,#collapsed-project {width:260px}
+/* Project title and navigation share one row. Keep actions fixed and accessible. */
+#workspace {--project-header-width:320px;--sidebar-edge:334px;--canvas-search-inset:346px}
+#sidebar,#collapsed-project {width:var(--project-header-width)}
 #sidebar .project,#collapsed-project {
- display:grid;grid-template-columns:32px minmax(0,1fr) 32px 32px;
- align-items:center;gap:4px;height:auto;min-height:80px;padding:8px 10px;
+ display:grid;grid-template-columns:32px minmax(0,1fr) 32px 32px 32px;
+ align-items:center;gap:4px;height:50px;min-height:50px;padding:8px 10px;
 }
 #sidebar .project > [data-project-name],#collapsed-project > [data-project-name] {
- grid-column:2 / -1;grid-row:1;min-width:0;white-space:normal;
- overflow-wrap:anywhere;overflow:visible;text-overflow:clip;
+ grid-column:2;grid-row:1;min-width:0;white-space:nowrap;
+ overflow:hidden;text-overflow:ellipsis;
  font-size:14px;line-height:20px;padding:0;color:var(--ui-ink);
 }
-#projects,#projects-collapsed {grid-column:1;grid-row:1;align-self:start}
-#sidebar .project .settings-entry,#collapsed-project .settings-entry {grid-column:2;grid-row:2;justify-self:end}
-#sidebar .project .history-entry,#collapsed-project .history-entry {grid-column:3;grid-row:2}
-#collapse,#collapsed-project #expand {grid-column:4;grid-row:2}
+#projects,#projects-collapsed {grid-column:1;grid-row:1;align-self:center}
+#sidebar .project .settings-entry,#collapsed-project .settings-entry {grid-column:3;grid-row:1}
+#sidebar .project .history-entry,#collapsed-project .history-entry {grid-column:4;grid-row:1}
+#collapse,#collapsed-project #expand {grid-column:5;grid-row:1}
 #sidebar .project .icon,#collapsed-project .icon {
  width:32px;height:32px;min-width:32px;min-height:32px;margin:0;
  color:var(--ui-ink);border-radius:8px;
@@ -221,8 +221,11 @@ body.dragging :is(.floating,#sidebar,#tag-quick-tools,#tag-popover) {background:
 #sidebar .project .pdf-panel,#collapsed-project .pdf-panel {width:20px;height:20px}
 #sidebar .project .pdf-back,#collapsed-project .pdf-back {width:14px;height:18px}
 @media(max-width:700px) {
- #workspace {--sidebar-edge:250px;--canvas-search-inset:262px}
- #sidebar,#collapsed-project {width:240px;left:10px}
+ #workspace {--project-header-width:300px;--sidebar-edge:310px;--canvas-search-inset:322px}
+ #sidebar,#collapsed-project {left:10px}
 }
-
+@media(max-width:560px) {
+ #workspace {--project-header-width:min(300px,calc(100vw - 84px));--sidebar-edge:calc(var(--project-header-width) + 10px);--canvas-search-inset:0px}
+ #collapsed-project {width:min(320px,calc(100% - 20px))}
+}
 #workspace:has(>#sidebar[hidden]) #canvas-toolbar {top:max(50%,var(--collapsed-toolbar-min-center,50%))}

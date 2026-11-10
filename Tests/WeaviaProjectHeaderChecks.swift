@@ -24,7 +24,7 @@ import WebKit
    precondition(!controller.window.isVisible); print("PASS: \(label)")
   }
   spin(10)
-  for name in ["Coffee Companion","咖啡伙伴跨语言设计研究 Coffee Companion International Design Research and Collaborative Material Collection"] {
+  for name in ["Coffee Companion","校园文化节海报","咖啡伙伴跨语言设计研究 Coffee Companion International Design Research and Collaborative Material Collection"] {
    context.selectProject(name);spin(4)
    _ = try evaluate("location.hash='#cuppa';true");spin(0.5)
    _ = try evaluate("""
@@ -36,17 +36,17 @@ import WebKit
      const buttons=[...h.querySelectorAll('button')],rects=buttons.map(e=>e.getBoundingClientRect());
      const overlaps=(a,b)=>a.left<b.right-.5&&a.right>b.left+.5&&a.top<b.bottom-.5&&a.bottom>b.top+.5;
      const search=document.getElementById('search-shell').getBoundingClientRect(),toolbar=document.getElementById('canvas-toolbar').getBoundingClientRect();
-     return title.textContent===title.title && title.scrollWidth<=title.clientWidth+1 && title.scrollHeight<=title.clientHeight+1 && getComputedStyle(title).whiteSpace==='normal'
+     return title.textContent===title.title && (title.textContent.length>40 || title.scrollWidth<=title.clientWidth+1) && title.scrollHeight<=title.clientHeight+1 && getComputedStyle(title).whiteSpace==='nowrap' && hr.height<=52 && Math.abs(tr.top+tr.height/2-(rects[0].top+rects[0].height/2))<=1 && rects.every(r=>Math.abs(r.top-rects[0].top)<=1)
       && hr.right<=innerWidth && hr.bottom<=innerHeight && !overlaps(hr,search) && !overlaps(hr,toolbar) && toolbar.bottom<=innerHeight
       && buttons.length===4 && buttons.every((e,i)=>e.getAttribute('aria-label')&&e.querySelector('svg,img')&&!e.textContent.trim()&&rects[i].width===32&&rects[i].height===32)
       && rects.every((r,i)=>r.left>=hr.left&&r.right<=hr.right&&r.top>=hr.top&&r.bottom<=hr.bottom&&!overlaps(r,tr)&&rects.every((r2,j)=>i===j||!overlaps(r,r2)));
     };true
    """)
-   for size in [NSSize(width:1280,height:820),NSSize(width:900,height:600)] {
+   for size in [NSSize(width:1280,height:820),NSSize(width:900,height:600),NSSize(width:560,height:600)] {
     controller.window.setContentSize(size);controller.webView.frame=NSRect(origin:.zero,size:size);spin(0.5)
     for collapsed in [false,true] {
      _ = try evaluate("document.getElementById('\(collapsed ? "collapse" : "expand")').click();true");spin(0.2)
-     try check("headerCheck()","full title and four nonoverlapping 32px vector controls: \(name), \(size), collapsed=\(collapsed)")
+     try check("headerCheck()","single-line title and four nonoverlapping 32px vector controls: \(name), \(size), collapsed=\(collapsed)")
      let details=try evaluate("JSON.stringify([...document.querySelectorAll('[data-project-name]')].map(e=>({title:e.textContent,rect:e.getBoundingClientRect().toJSON()})))")
      print("LAYOUT: \(details ?? "nil")")
      if CommandLine.arguments.count > 2 {
@@ -54,7 +54,7 @@ import WebKit
       controller.webView.takeSnapshot(with:nil){image,error in
        defer{done=true}
        if let image,let tiff=image.tiffRepresentation,let bitmap=NSBitmapImageRep(data:tiff),let png=bitmap.representation(using:.png,properties:[:]) {
-        let filename="header-\(name == "Coffee Companion" ? "normal" : "long")-\(Int(size.width))-\(collapsed ? "collapsed" : "expanded").png"
+        let filename="header-\(name == "Coffee Companion" ? "normal" : (name == "校园文化节海报" ? "reported" : "long"))-\(Int(size.width))-\(collapsed ? "collapsed" : "expanded").png"
         try? png.write(to:URL(fileURLWithPath:CommandLine.arguments[2]).appendingPathComponent(filename))
        } else {print("SNAPSHOT_LIMITATION: \(String(describing:error))")}
       }

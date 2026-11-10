@@ -1,5 +1,5 @@
 {
-  "snapshot": "v0.2.5-build6",
+  "snapshot": "v0.2.6-build8",
   "source_sha256": {
     "BrandAssets/weavia-original.png": "ce564935d15c480815fe6173be470b7e2a4cf2ba22051132846fbe51321fe19e",
     "Package.swift": "aacf477868f01eac6186e900afdec0bff330cc987e311fcc6808c04fc1b46b11",
@@ -67,7 +67,7 @@
     "Sources/MouseCompanion/CuppaCanvas/idea-provenance.css": "b7861fbe4a8a0a6e8c5ad4a200ca6f50a6454ac709f4724eb8844b42a5855b48",
     "Sources/MouseCompanion/CuppaCanvas/idea-provenance.js": "66656179d4ad5cf7074544520124539aa573659bc2994aed536fb44bedc7fe7b",
     "Sources/MouseCompanion/CuppaCanvas/index.html": "2b704aae94265e4a110ef94e143b4fc998f7ab0755b2999eecd4d2b3ab54ee96",
-    "Sources/MouseCompanion/CuppaCanvas/mac-native-bridge.js": "65c53ff0b9fc952294cb3af07550872e26575b807d4f890c4a1eb70aa4e4042c",
+    "Sources/MouseCompanion/CuppaCanvas/mac-native-bridge.js": "b028cc1c517e1aecd65900dcb54d05da2c0bb5448107dafacfac8be039a63482",
     "Sources/MouseCompanion/CuppaCanvas/project-desktop.css": "bb8d389c89cb1d336c4d1c734a58694138954f679b1343a884ade2ed00815c10",
     "Sources/MouseCompanion/CuppaCanvas/project-desktop.js": "08bbec4a2f8259bd13be0df30cba9929e883aac1501183eada968a1c8f25fbe2",
     "Sources/MouseCompanion/CuppaCanvas/project-memory-durable.js": "24a2ca570008c13ce835d9aef295befcf33ceb2b862f85cb43f0071bfddf4efa",
@@ -87,7 +87,7 @@
     "Sources/MouseCompanion/CuppaCanvas/tray-image-assets.js": "b7ac31475b27670d11813a7a79d85da57de50f05b2b9a04529b74f46a5246455",
     "Sources/MouseCompanion/CuppaCanvas/tray-inbox.css": "8cd4aa63ae7ff0e11d10900958b67a2f70d7fe990343660614494fb44337ab05",
     "Sources/MouseCompanion/CuppaCanvas/tray-inbox.js": "551401afc83b272133015cb3970c64608ee7386efab29b3f41a4ae908f7f3446",
-    "Sources/MouseCompanion/CuppaCanvas/visual-theme.css": "f8f7b3a846d0974130cc38b3912860379cf332b10e5fb13e751a71bc0a631d00",
+    "Sources/MouseCompanion/CuppaCanvas/visual-theme.css": "38591c063b231296461b90efa4025c420bbaf602dc2a90ac92999e7fbe04a7a0",
     "Sources/MouseCompanion/CuppaCanvas/work-mode.js": "1b15ad9572d480466c717a5a86022f5e5edc417fb8ae1a1eb7c0f1df194c5415",
     "Sources/MouseCompanion/DesignOCR.swift": "a688920a908aea2acbcc8aa588c5febd723cddff6fe203ef1427ed6bb3f81d73",
     "Sources/MouseCompanion/DesignSkills/content-understanding.md": "525dea3c4c1af978c3c529282f68517f8076df66d88d3cab4cf30136855a06eb",
@@ -145,11 +145,11 @@
     "Tests/WeaviaCardDetailsChecks.sh": "877d183e2d7657ae4d15894955817588365f20948b111ad5e0263278e3419885",
     "Tests/WeaviaCardDetailsChecks.swift": "79db796e5988357e7bd7d6431de0b4a6494e12b77359ea8653cc41bbffa8e8f1",
     "Tests/WeaviaInspirationParityChecks.py": "bc71a2323c020dc70ad746790154e75e0b61d8959c9ded666eebe7f1632dff46",
-    "Tests/WeaviaLargeImageBridgeTests.js": "e2b5a96975a5318f1279670177d0223896d3d6f6a4143ca881e9607ae09213b9",
+    "Tests/WeaviaLargeImageBridgeTests.js": "29c61dd8d1517cf3d7d112738dc4c2ac64d80efc00d3205996265f08d7dcf898",
     "Tests/WeaviaNativeCanvasChecks.sh": "adc73d0341a042d37241ede2f56d412e3f7ed3a52b3b5c736400672d8c7a4e8c",
     "Tests/WeaviaNativeCanvasChecks.swift": "0c7efc9f5cec89f81e0a790671537f61aa911ab76bc91a380837e940662109d8",
     "Tests/WeaviaProjectHeaderChecks.sh": "9aeb56a8dd87bf76fd085b9e83a5394a32e79282a98ff54b251b7aca1d5bb8b5",
-    "Tests/WeaviaProjectHeaderChecks.swift": "add27693f9b0d2fef07b4bb00f130d44b4622c8fa433b6636d7c269248801655",
+    "Tests/WeaviaProjectHeaderChecks.swift": "fee2f0eb5bf42938886d63f301867078233dd93f93d730e88c42a3f6cea788f5",
     "Tests/WeaviaSelectionBridgeTests.js": "24e193bb3e084a0586a3c67cfc40ca5328c52fd7ac3166c6641dd39d06e92268",
     "Tests/WeaviaSelectionPromptChecks.sh": "5c9c171269a5eace5cbdd3abf91c3a301f175a59fd06774e8eb244d0b6d88d00",
     "Tests/WeaviaSelectionPromptChecks.swift": "3b91b9e2c840c26e064f70f095c85a894973536d04c93dece78dcfef0195521f",
@@ -158,6 +158,8 @@
     "Tests/WeaviaSmartTagsTests.js": "6862f8096a2cea6c02f29fa39fd94fbaba4fa304fe74cf20039b833fb0c3390b",
     "Tests/WeaviaSmartTagsUIChecks.sh": "8c24607c814e2e8ddc56393e99347db778f80fb571234cee99a90898a390b074",
     "Tests/WeaviaSmartTagsUIChecks.swift": "16051ddb103146e2db7e6a2ae769073fad8c8527e91d0cc1721d67afc4cdaee9",
+    "Tests/WeaviaSnapshotHydrationChecks.sh": "8d48eac04d2d562812b34c1c7a5d51d0936f88217e35c189d955528d925b42c3",
+    "Tests/WeaviaSnapshotHydrationChecks.swift": "b2f7c9ead1ac1add9482abb82afb461b19f7f3ec7946e4e1d5fcaca031e03bac",
     "Tests/WeaviaTrayCardChecks.sh": "aa61423457cd3a3cbd70322ef9d2070729bcf05108fb3e5ff6b31ec03e3241d1",
     "Tests/WeaviaTrayCardChecks.swift": "335b27bdf0b4f38757d1c950d983d8b55d58ec4ce5683a785a138be34b9b0ec7",
     "Tests/run_answer_bubble_ui_checks.py": "322aa85d2e6111779076a5739f3a5c331a3eb554cde770f744830f479c7fa94c",
@@ -167,8 +169,8 @@
     "Tests/run_inline_capture_ui_checks.py": "f0577715f0d3a8de44f61f2a988cea669ccc5ce61f61c6ec607fa92a6e96bb76",
     "Tests/run_note_content_ui_checks.py": "b99f7b9872a9ae02badc14896996546af8d78f41afb0b880f2e8401ab128cb81",
     "Tests/run_project_persistence_checks.py": "704fabd055e27aa34828ccfc6f64e397e95c38d64cae210219131d191e05766a",
-    "build_app.sh": "fa3dfe6a398c41f5c21aee7ffa3d2daff440ef437cc2760fb0db395fe525712f",
+    "build_app.sh": "d745516158ffeb1761ee2700f03c32e70a22c7b34a8ed7125902ebcb2a2c7df0",
     "build_icon.sh": "1ea70e575b5025abaf21619cffba5afa6b330e8d0b0e6e6f2d3a8718f775dae6"
   },
-  "status": "历史整合源码；主目录现有app另为旧0.2.3，不用它代表本快照"
+  "status": "历史单行项目头与首次图层恢复版本"
 }

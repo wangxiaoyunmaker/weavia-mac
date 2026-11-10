@@ -127,7 +127,17 @@
  }
  function saveNative(){if(!initialized||protectedError||transactionBusy)return;const snapshot=clone(state);if(JSON.stringify(snapshot)===lastAcknowledgedRaw&&!pendingRaw)return;stage(snapshot);post('saveCanvas',{snapshot});}
  function agent(prompt='',cards=selectedCards()){activeAgent=post('openAgent',{prompt,cards:context(cards)});}
- function refresh(){state.cards.forEach(c=>{if(c.type==='source')prepareResource(c);prepareCardTags(c);if(c.type==='claim')prepareClaim(c);});renderCards();renderSide();sync();updateView();}
+ function refresh(restoreGraph=false){
+  state.cards.forEach(c=>{if(c.type==='source')prepareResource(c);prepareCardTags(c);if(c.type==='claim')prepareClaim(c);});
+  renderCards();renderSide();
+  // First native hydration replaces the empty bootstrap after graph initialization.
+  // Restore structural UI once, without rebuilding an active region editor on later syncs.
+  if(restoreGraph&&typeof renderRegions==='function')renderRegions();
+  if(typeof relationButtons==='function')relationButtons();
+  sync();updateView();
+  // Background WebKit can defer animation frames; restored labels/counts must not wait.
+  if(restoreGraph&&typeof drawGraph==='function')drawGraph();
+ }
  function receiveSnapshot(value){
   if(!value||value.version!==1||value.projectId!==project())return {ok:false,message:'项目不匹配'};
   if(!installed){queued=value;return {ok:true,pending:true};}
@@ -143,6 +153,9 @@
    if(incoming){try{validateSnapshot(incoming);}catch(error){protect(error.message);readyResolve();return {ok:false,message:protectedError};}}
    if(!initialized&&incoming&&!pendingRaw&&!cacheRead(dirtyKey()))state=clone(incoming);
    validateSnapshot(state);
+   // Legacy snapshots may predate graph fields; missing fields mean an empty graph.
+   if(state.regions===undefined)state.regions=[];
+   if(state.connections===undefined)state.connections=[];
    const materials=Array.isArray(value.materials)?value.materials:[];
    state=mergeMaterials(state,materials);
    for(const [id,point] of placements){const card=state.cards.find(c=>c.nativeMaterialId===id);if(card){card.x=point.x;card.y=point.y;placements.delete(id);}}
@@ -150,7 +163,7 @@
    initialized=true;canvasPersistedToken=JSON.stringify(state);cacheWrite(canvasStorageKey,canvasPersistedToken);
    if(value.mode==='focus'||value.mode==='cocreate')mode=value.mode;
    cuppaWorkModeV1.sync({available:true,mode,revision:value.revision||0});
-   if(first||before!==JSON.stringify(state)){refresh();saveNative();}
+   if(first||before!==JSON.stringify(state)){refresh(first);saveNative();}
    root.weaviaProjectDesktop?.update?.(cuppaBootstrap.projects||[],project(),materials);if(first){readyResolve();memoryListeners.forEach(f=>f());}return {ok:true,count:state.cards.length};
   }catch(error){notify('Mac 画布同步失败：'+error.message);return {ok:false,message:error.message};}
  }
